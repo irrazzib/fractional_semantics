@@ -2,7 +2,7 @@ services:
   - type: web
     name: fractional-semantics
     runtime: python
-    buildCommand: ""
+    buildCommand: pip install -r requirements.txt
     startCommand: python -m fs_semantics web-app
     envVars:
       - key: PYTHON_VERSION
