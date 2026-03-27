@@ -1,0 +1,1438 @@
+\documentclass[12pt,a4paper,reqno]{amsart}
+\usepackage{fullpage}
+\linespread{1.2}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath, calc}
+\usepackage{stmaryrd} % Where \llbracket and \rrbracket are defined
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{turnstile}
+\usepackage{forest}
+\usepackage{bussproofs}
+\usepackage{graphics}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{claim}[theorem]{Claim}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition} 
+\newtheorem{example}[theorem]{Example} 
+\newtheorem{remark}[theorem]{Remark} 
+
+\usepackage{mathtools} %\mathclap rende le equazioni compatte
+
+\usepackage{mathrsfs}
+
+\newcommand{\Li}{$\mathcal{L}$ }
+\newcommand{\numberset}{\mathbb}
+\newcommand{\N}{\numberset{N}}
+\newcommand{\R}{\numberset{R}}
+\newcommand{\Q}{\numberset{Q}}
+\newcommand{\B}{\numberset{B}}
+\newcommand{\G}{\numberset{G}}
+\DeclareMathOperator{\st}{st}
+
+% Nonstandard analysis (hyperreal numbers)
+\newcommand{\Rstar}{{}^{\ast}\R}
+\newcommand{\Nstar}{{}^{\ast}\N}
+\newcommand{\Fin}{\mathrm{Fin}}
+\newcommand{\Inf}{\mathrm{Inf}}
+
+\usepackage[most]{tcolorbox} % put this in the preamble
+
+% Define a custom box style
+\tcbset{
+ myfigurebox/.style={
+ colframe=black, % border color
+ colback=white, % background color
+ boxrule=0.8pt, % thickness of the border
+ arc=3mm, % corner roundness
+ boxsep=4pt, % space between content and border
+ left=6pt,right=6pt, % horizontal padding
+ top=6pt,bottom=6pt % vertical padding
+ }
+}
+
+\title{A Logic for credences}
+%\begin{abstract}
+%We introduce a new type of top sequent in fractional semantics for classical logic by introducing a set of axioms denoted as $\B$. We also introduce hyperreal numbers to distinguish between tautologies and beliefs, or more precisely between Full Beliefs and Revisable Believes. The main purpose of this paper is to generalise a Proposition in Fractional Semantics with Hyperreal Numbers.
+%\end{abstract}
+\author{Matteo Bizzarri, Mario Piazza}
+%\date{November 2024}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+Fractional Semantics, introduced in \cite{piazzapulcini:fractional}, is a proof-theoretic semantics that assigns to formulas rational values in $[0,1]$ by reading off the \emph{axiomatic profile} of analytic derivations: the value of a proof is the ratio of tautological leaves to total leaves.  The methodology has been extended to modal logic \cite{piazzapulcini:modal} and, more recently, to the proof-theoretic treatment of doxastic states \cite{bizzarri_beliefs}, where it provides an informative response to the Lottery Paradox \cite{bizzarri_lottery}.
+
+The present paper refines that doxastic extension in a way that is both philosophically motivated and technically conservative.
+
+\smallskip
+\noindent\textbf{(1) Beliefs as axioms, but not as tautologies.}
+We work with the system $GS4_\B$, obtained by adding to the maximal analytic calculus $\overline{\overline{GS4}}$ a set $\B$ of \emph{belief axioms} representing the agent's current commitments.  A purely ``flat'' implementation would treat belief axioms as if they were tautological leaves; this blurs the intended distinction between logical validity and epistemic acceptance.
+
+\smallskip
+\noindent\textbf{(2) Full vs.\ revisable beliefs via hyperreal residues.}
+To separate \emph{immutability} from \emph{current acceptance}, we distinguish \emph{Full Beliefs} (never to be surrendered) from \emph{Revisable Beliefs} (accepted \emph{for now}, but open to retraction).  Following the nonstandard approach to belief change in \cite{Hansson2020}, we encode this distinction in a hyperreal field $\Rstar$ by assigning weight
+\[
+1 \quad\text{to Full Beliefs, and}\quad 1-\varepsilon \quad\text{to Revisable Beliefs,}
+\]
+where $\varepsilon>0$ is an \emph{infinitesimal}.  The ordinary (real-valued) fractional semantics is recovered by the standard-part map $\st:\Fin(\Rstar)\to\R$, so that $\st(1-\varepsilon)=1$ and the original results remain valid at the level of standard values.  At the same time, the infinitesimal residue records \emph{how} a derivation depends on revisable premises.
+
+\smallskip
+\noindent\textbf{(3) From categorical to graded commitments.}
+We then generalize from categorical beliefs to \emph{gradient beliefs}, i.e.\ commitments held with an arbitrary degree of confidence in $[0,1]$.  This yields the system $GS4_{\B,\G}$, where the fractional semantics integrates both categorical and graded epistemic inputs while retaining a proof-theoretic normalization discipline.
+
+\smallskip
+\noindent\textbf{Why hyperreals?}
+For our purposes, the hyperreals provide exactly the minimal non-Archimedean infrastructure needed to ``discount'' revisable axioms by an infinitesimal amount while keeping standard fractions unchanged: a linearly ordered field extension of $\R$ with a standard-part map on finite elements.  Moreover, the ultrapower construction and the Transfer Principle offer an additional technical advantage: inequalities and algebraic identities proved over $\R$ automatically persist in $\Rstar$, which makes the infinitesimal bookkeeping modular and robust \cite{robinson1966,goldblatt1998,keisler1986}.
+
+\smallskip
+\noindent\textbf{Structure.}
+Section~\ref{sec:frac} recalls Fractional Semantics.
+Section~\ref{sec:beliefs} introduces $GS4_\B$ and the basic treatment of beliefs.
+Section~\ref{sec:full-revisable} develops the hyperreal refinement distinguishing Full and Revisable Beliefs.
+Section~\ref{sec:revision} formalizes contraction, expansion, and revision inside the proof-theoretic semantics.
+Section~\ref{sec:gradient} extends the framework to gradient beliefs and to belief change in that setting.
+
+
+\section{Fractional Semantics}
+\label{sec:frac}
+
+We begin by establishing some basic notions that will be used throughout this paper. The material in this section is based on the previous works \cite{piazzapulcini:fractional, piazzapulcini:modal}. In particular, we work with a language containing propositional atoms, and complex formulas are built using the connectives $\neg$, $\wedge$, and $\vee$. We use $p,q,r,\ldots$ as metavariables for propositional atomic formulas, and $A,B,C,\ldots$ as metavariables for compound formulas. The set of formulas is denoted by $\mathbb{A}, \mathbb{B}, \ldots$. Capital Greek letters ($\Gamma, \Delta, \ldots$) are used as metavariables for multisets, i.e., collections of formulas in which multiplicity counts and order is irrelevant. We work with left-sided sequents, written in the following form:
+
+$$\vdash \Gamma$$
+
+
+Fractional semantics is a proof-theoretic, many-valued semantics that assigns to formulas rational numbers in $[0,1]$ by inspecting the \emph{axiomatic structure} of their analytic derivations. Intuitively, the value of a derivation is the proportion of ``tautological leaves'' among all its leaves.
+
+To make this precise, we work with Kleene's one-sided sequent calculus $GS4$ for classical propositional logic \cite{kleene:mathematical, troelstra:basicproof}. Sequents are of the form $\vdash \Gamma$, where $\Gamma$ is a multiset of formulas and $\vdash \Gamma$ represents the disjunction $\bigvee \Gamma$.
+
+\medskip
+\noindent
+\textbf{Proof-theoretic conditions.}
+Fractional semantics is defined for a decidable logic presented by a sequent calculus satisfying (i) \emph{termination} of proof search, (ii) \emph{invertibility} of logical rules (so that analytic proofs compute a canonical normal form), and (iii) \emph{stability} (any two analytic proofs of the same end-sequent have the same multiset of leaves). In $GS4$ these conditions are met for the analytic fragment \cite{piazzapulcini:fractional, piazzapulcini:modal}.
+
+\subsection*{The calculi $GS4$ and $\overline{\overline{GS4}}$}
+
+The axiom and rules of $GS4$ are:
+
+\begin{prooftree}
+ \AxiomC{ }
+ \RightLabel{\scriptsize$(ax.)$}
+ \UnaryInfC{$\vdash \Gamma , p, \neg p$}
+\end{prooftree}
+\begin{minipage}{.60\textwidth}
+\begin{prooftree}
+ \AxiomC{$\vdash \Gamma , A, B$ }
+ \RightLabel{\scriptsize$(\vee)$}
+ \UnaryInfC{$\vdash \Gamma , A \vee B$}
+\end{prooftree}
+\end{minipage}
+\begin{minipage}{.30\textwidth}
+\begin{prooftree}
+ \AxiomC{$\vdash \Gamma , A$ }
+ \AxiomC{$\vdash \Gamma , B$ }
+ \RightLabel{\scriptsize$(\wedge)$}
+ \BinaryInfC{$\vdash \Gamma , A \wedge B$}
+\end{prooftree}
+\end{minipage}
+
+\medskip
+\noindent
+Negation is treated at the level of literals: initial sequents contain only atomic formulas $p$ and their negations $\neg p$.
+
+Fractional semantics is not defined on $GS4$ alone, but on its \emph{maximal} axiomatic extension $\overline{\overline{GS4}}$ \cite{piazzapulcini:fractional}. In $\overline{\overline{GS4}}$ every \emph{clause} (i.e.\ every initial sequent consisting only of literals) is taken to be an axiom. Thus, in addition to the tautological identity axioms $(ax.)$, we allow \emph{complementary axioms} $(\overline{ax.})$ that introduce non-tautological clauses \cite{avron:gentzen}. Cut is admissible and analytic proofs enjoy a Gentzen-style cut-elimination theorem (under the usual restriction to clauses).
+
+\subsection*{Top-sequents and valuation}
+
+Let $\pi$ be an analytic $\overline{\overline{GS4}}$-derivation. Its \emph{top-sequents} are exactly the leaves of $\pi$.
+We partition them into:
+\begin{itemize}
+ \item $\mathrm{Top}^1(\pi)$: the multiset of leaves introduced by the identity axiom $(ax.)$ (tautological leaves);
+ \item $\mathrm{Top}^0(\pi)$: the multiset of leaves introduced by complementary axioms $(\overline{ax.})$ (non-tautological leaves).
+\end{itemize}
+Write $m(\pi)=|\mathrm{Top}^1(\pi)|$ and $n(\pi)=|\mathrm{Top}^0(\pi)|$, so that $|\mathrm{Top}(\pi)|=m(\pi)+n(\pi)$.
+For consistency with earlier presentations, we may also write $\#top^1(\pi):=m(\pi)$ and $\#top^0(\pi):=n(\pi)$.
+
+\begin{definition}[Fractional value]\label{def:fractional-value}
+The fractional value of $\pi$ is
+\[
+\mathrm{Val}(\pi)\;=\;\frac{m(\pi)}{m(\pi)+n(\pi)}\ \in\ [0,1]\cap\Q.
+\]
+If $\pi$ is an analytic derivation of $\vdash \Gamma$, we set $\llbracket \Gamma\rrbracket := \mathrm{Val}(\pi)$ and, in particular, $\llbracket A\rrbracket := \llbracket A\rrbracket$ for $\Gamma=\{A\}$.
+By stability, $\llbracket \Gamma\rrbracket$ does not depend on the choice of analytic derivation.
+\end{definition}
+ It is often convenient to \emph{internalize} the bookkeeping of $m(\pi)$ and $n(\pi)$ directly in the derivation, by decorating the turnstile with a pair $(N,M)$ recording respectively the total number of leaves and the number of tautological leaves accumulated so far. This yields the following decorated presentation of $\overline{\overline{GS4}}$. 
+
+%\begin{definition}[The sequent calculus]
+	
+	\begin{minipage}{.40\textwidth}
+	\begin{prooftree}
+		\vspace{0.5cm}
+		\AxiomC{ }
+		\RightLabel{\scriptsize$(ax.)$}
+		\UnaryInfC{$\sststile{\mathrm{1}}{1} \Gamma , p, \overline{p}$}
+		
+	\end{prooftree}
+\end{minipage}
+	\begin{minipage}{.40\textwidth}
+	\begin{prooftree}
+				\vspace{0.5cm}
+		\AxiomC{ }
+		\RightLabel{\scriptsize$(\overline{ax.})$}
+		\UnaryInfC{$\sststile{\mathrm{1}}{0} \Delta$}
+		
+	\end{prooftree}
+\end{minipage}
+\vspace{0.5cm}
+
+	\begin{minipage}{.40\textwidth}
+	\begin{prooftree}
+		
+		\AxiomC{$\sststile{\mathrm{n}}{m} \Gamma , A, B$ }
+		\RightLabel{\scriptsize$(\vee)$}
+		\UnaryInfC{$\sststile{\mathrm{n}}{m} \Gamma , A \vee B$}
+		
+	\end{prooftree}
+\end{minipage}
+\vspace{0.5cm}
+\begin{minipage}{.40\textwidth}
+	\begin{prooftree}
+		
+		\AxiomC{$\sststile{\mathrm{n_1}}{m_1} \Gamma , A$ }
+		\AxiomC{$\sststile{\mathrm{n_2}}{m_2} \Gamma , B$ }
+		\RightLabel{\scriptsize$(\wedge)$}
+		\BinaryInfC{$\sststile{\mathrm{n_1+n_2}}{m_1+m_2} \Gamma , A \wedge B$}
+		
+	\end{prooftree}
+\end{minipage}
+%\end{definition} 
+
+\begin{example}
+	
+
+Let's consider an example with the turnstile decorated:
+
+	\begin{prooftree}
+	\AxiomC{ }
+	\RightLabel{\scriptsize$(\overline{ax.})$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{0} p, q$}
+	%\sststile{\mathrm{n_1}}{m_1}
+	\RightLabel{\scriptsize$(\vee)$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{0} p \vee q$}
+	
+	\AxiomC{ }
+	\RightLabel{\scriptsize$(ax.)$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{1} p, \overline{p}$}
+	\RightLabel{\scriptsize$(\vee)$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{1} p \vee \overline{p}$}
+	\RightLabel{\scriptsize$(\wedge)$}
+	\BinaryInfC{$\sststile{\mathrm{2}}{1} (p\vee q) \wedge (p \vee \overline{p})$}
+	
+	\AxiomC{ }
+	\RightLabel{\scriptsize$(\overline{ax.})$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{0} \overline{r}$}
+	
+	\AxiomC{ }
+	\RightLabel{\scriptsize$(\overline{ax.})$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{0} \overline{t}$}
+	\RightLabel{\scriptsize$(\wedge)$}
+	\BinaryInfC{$\sststile{\mathrm{2}}{0} (\overline{r} \wedge \overline{t})$}
+	\RightLabel{\scriptsize$(\wedge)$}
+	\BinaryInfC{$\sststile{\mathrm{4}}{1} (p\vee q)\wedge (p\vee \overline{p}) \wedge (\overline{r} \wedge \overline{t})$}
+	
+\end{prooftree}
+\vspace{0.5cm}
+
+Here, it is possible to observe that for each step of the proof, we can directly read the fractional semantics value on the turnstile.
+\end{example}
+
+
+\begin{figure}
+\begin{tcolorbox}[myfigurebox]
+
+\centering
+\textbf{Axiom:
+}
+\begin{prooftree}
+ \AxiomC{ }
+ \RightLabel{\scriptsize{(ax.)}}
+ \UnaryInfC{$\vdash \Gamma, p, \neg p$}
+\end{prooftree}
+
+\medskip
+\textbf{Rules: }
+\medskip
+
+\begin{minipage}{0.4\textwidth}
+\begin{prooftree}
+ \AxiomC{$\vdash \Gamma, A, B$}
+ \RightLabel{\scriptsize$(R\vee)$}
+ \UnaryInfC{$\vdash \Gamma, A\vee B$}
+\end{prooftree}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+\begin{prooftree}
+ \AxiomC{$\vdash \Gamma, A$}
+ \AxiomC{$\vdash \Gamma, B$}
+ \RightLabel{\scriptsize$(R\wedge)$}
+ \BinaryInfC{$\vdash \Gamma, A\wedge B$}
+\end{prooftree}
+\end{minipage}
+\end{tcolorbox}
+\label{tab:gs4}
+\caption{The GS4 sequent calculus}
+\end{figure}
+
+
+
+\begin{figure}
+\begin{tcolorbox}[myfigurebox]
+ 
+\centering
+
+\textbf{Axioms:}
+\medskip
+
+\begin{minipage}{0.4\textwidth}
+\begin{prooftree}
+ \AxiomC{ }
+ \RightLabel{\scriptsize($\overline{ax.}$)}
+ \UnaryInfC{$\Gamma \sststile{1}{0} \Delta$}
+\end{prooftree}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+\begin{prooftree}
+ \AxiomC{ }
+ \RightLabel{\scriptsize(ax.)}
+ \UnaryInfC{$\sststile{1}{1} \Gamma, p, \neg p$}
+\end{prooftree}
+\end{minipage}
+
+\medskip
+\vspace{0.5cm}
+\textbf{Rules:}\vspace{0.3cm}
+
+\begin{minipage}{0.36\textwidth}
+\begin{prooftree}
+ \AxiomC{$\sststile{n}{m} \Gamma, A, B$}
+ \RightLabel{\scriptsize$(R\vee)$}
+ \UnaryInfC{$\sststile{n}{m} \Gamma, A\vee B$}
+\end{prooftree}
+
+\end{minipage}
+\begin{minipage}{0.48\textwidth}
+\begin{prooftree}
+ \AxiomC{$\sststile{n_1}{m_1} \Gamma, A$}
+ \AxiomC{$\sststile{n_2}{m_2} \Gamma, B$}
+ \RightLabel{\scriptsize$(R\wedge)$}
+ \BinaryInfC{$\sststile{n_1+n_2}{m_1+m_2} \Gamma, A\wedge B$}
+\end{prooftree}
+\end{minipage}
+\end{tcolorbox}
+\label{tab:gs4+}
+\caption{The $\overline{\overline{GS4}}$ sequent calculus}
+\end{figure}
+
+\section{Framing beliefs into Fractional Semantics for classical logic}
+\label{sec:beliefs}
+
+In this section we recall the framework first introduced in \cite{bizzarri_beliefs}.  
+Starting from Fractional Semantics, one can extend classical logic by incorporating a set of formulas, denoted by $\B$, representing the agent’s categorical beliefs. These formulas are added to the system as axioms and are therefore treated, at the proof-theoretic level, in the same way as tautological leaves. The guiding assumption is that an agent takes her own beliefs to be true, and the calculus reflects this by allowing their corresponding clauses to contribute maximal support within analytic derivations.
+
+In this context, beliefs are assumed to be deductively closed, meaning that if an agent believes a proposition and also believes that it logically entails another, then the agent is taken to believe the consequence as well. This reflects the idealization of a deductively rational agent, who believes all logical consequences of their beliefs. Integrating such beliefs into fractional semantics can yield truth values greater than those typically permitted by standard frameworks.
+
+%Beliefs in this context are treated as deductively closed, implying that any deduction made using these true beliefs is also considered true. This reflects the idea of an agent being deductively ideal. Integrating such beliefs into fractional semantics can lead to obtaining values greater than those typically permitted by fractional semantics alone.
+
+The inspiration for this expansion comes from one of Makinson's methods, namely \textit{pivotal-assumption consequence}, used to bridge the gap between classical and non-monotonic logic by adding background assumptions. However, the fractional semantics approach with added beliefs differs from \textit{pivotal-assumption consequence} in two key aspects. Firstly, while Makinson used a classical two-valued semantics, fractional semantics operates within a multi-valued interpretation. Secondly, \textit{pivotal-assumption consequence} assigns the value 0 if any axiom is not a proper axiom or belief, whereas fractional semantics can assign values greater than 0 when a top sequent is a tautology or a belief.
+
+To incorporate beliefs into the system, they must be atomic; otherwise, they need to be decomposed. The definitions of $GS4_\B$ and $\vdash_\B$ are provided as follows:
+
+
+\begin{definition}[$GS4_\B$]\label{def:gs4B-def}
+Let $\B$ be a set of formulas representing the agent's (categorical) beliefs.
+Since axioms in $GS4$ are clauses (multisets of literals), any non-atomic belief is first decomposed into an analytic $GS4$-derivation and we collect the resulting initial sequents. Let $\mathrm{Cl}(\B)$ be the set of all such clauses obtained from beliefs in $\B$, closed under Cut.
+
+The calculus $GS4_\B$ is obtained from $\overline{\overline{GS4}}$ by adding, for every clause $\Delta\in \mathrm{Cl}(\B)$, the \emph{belief axiom}:
+\begin{prooftree}
+ \AxiomC{ }
+ \RightLabel{\scriptsize$(b_\Delta)$}
+ \UnaryInfC{$\sststile{1}{1}_\B\, \Delta$}
+\end{prooftree}
+Intuitively, belief axioms are treated like tautological leaves in the fractional bookkeeping.
+\end{definition}
+
+\begin{definition}[Consequence relation $\vdash_\B$]\label{def:vdashB}
+We write $\Gamma \vdash_\B A$ iff there exists a $GS4_\B$-derivation of the sequent $\vdash \Gamma, A$.
+\end{definition}
+
+
+The system is not Post-complete because structurality and consistency are mutually exclusive properties in the axiomatic extension of classical logic: adding new axioms to the system is not possible to maintain structurality, i.e., substitution is dropped. Makinson highlighted this in \cite{mak:bridges} without explicitly citing Post, even though the underlying reason is identical. 
+
+	\begin{theorem}
+	\label{th:subMak}
+	
+	There is no supra-classical closure relation in the same language as classical $\; \vdash$ that is closed under substitution, except for $\; \vdash$ itself and the total relation i.e. the relation that relates every possible premises to every possible conclusion.
+	
+\end{theorem}
+
+\noindent 
+and this applies also to this system. Now, let's delve deeper into formalizing the system by defining the top sequent incorporating added beliefs.
+
+\begin{definition}[$\#top^b(\pi)$] represents the cardinality of all and only top sequents of $\pi$ introduced by a belief.
+\end{definition}
+
+\noindent
+The reason for introducing this new type of top sequent stems from our desire, particularly in this context, to treat beliefs on par with identity axioms. This is because an agent invariably regards her own beliefs as true. The updated method for calculating the value of a sequent is:
+
+$$\llbracket A \rrbracket_\B = \frac{\#top^b(\pi) + \#top^1(\pi)}{\#top^b(\pi) + \#top^1(\pi) + \#top^0(\pi)}$$
+	
+\noindent
+It is also possible to see the same tree with multi valued system, adding a new axiom:
+
+\begin{prooftree}
+	\vspace{0.5cm}
+	\AxiomC{ }
+	\RightLabel{\scriptsize$(b_i)$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{1}_\B b_i, \Gamma$}
+ \end{prooftree}
+
+ \noindent that is true if and only if $b_i\in \B$. This axiom will be the only addition here, since the rest of the Rules shown in Figure \ref{tab:gs4+} are the same.
+
+
+ \begin{example}
+	\label{ex:4}
+For example, let us suppose I know that the orange juice is either in the fridge or on the table, i.e., $\B=\{p,q\}$. Then I have to consider the sentence: “The orange juice is either in the fridge or on the table, and my wife is either in the house or not in the house, and I do not have an umbrella, and it is not raining outside.” In classical logic we would assign the value 0, but with Fractional Semantics we can evaluate the sentence with the following tree:
+
+	\begin{prooftree}
+	\AxiomC{ }
+	\RightLabel{\scriptsize$(b_1)$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{1}_\B p, q$}
+	%\sststile{\mathrm{n_1}}{m_1}
+	\RightLabel{\scriptsize$(\vee)$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{1}_\B p \vee q$}
+	
+	\AxiomC{ }
+	\RightLabel{\scriptsize$(ax.)$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{1}_\B s, \neg s$}
+	\RightLabel{\scriptsize$(\vee)$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{1}_\B s \vee \neg s$}
+	\RightLabel{\scriptsize$(\wedge)$}
+	\BinaryInfC{$\sststile{\mathrm{2}}{2}_\B (p\vee q) \wedge (s \vee \neg s)$}
+	
+	\AxiomC{ }
+	\RightLabel{\scriptsize$(\overline{ax.})$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{0}_\B \neg r$}
+	
+	\AxiomC{ }
+	\RightLabel{\scriptsize$(\overline{ax.})$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{0}_\B \neg t$}
+	\RightLabel{\scriptsize$(\wedge)$}
+	\BinaryInfC{$\sststile{\mathrm{2}}{0}_\B (\neg r \wedge \neg t)$}
+	\RightLabel{\scriptsize$(\wedge)$}
+	\BinaryInfC{$\sststile{\mathrm{4}}{2}_\B (p\vee q)\wedge (s\vee \neg s) \wedge (\neg r \wedge \neg t)$}
+	
+\end{prooftree}
+\end{example}
+\vspace{0.5cm}
+
+Something similar happens in Makinson pivotal assumption consequence \cite{mak:bridges}, also if the belief set is the same that we have defined earlier, because a two valued logic is there considered. 
+
+\section{Full Beliefs and Revisable Beliefs}
+\label{sec:full-revisable}
+
+The formal model of beliefs used so far is dichotomous: an all-or-nothing
+structure in which a belief is either fully accepted or not accepted at all.
+We previously claimed that, within this framework, beliefs are treated as
+true in the same way as tautologies. This binary picture can be refined.
+In this section we distinguish between \emph{Full Beliefs} and \emph{Revisable
+Beliefs}. A \emph{Full Belief} is a belief that the agent is unwilling to
+discard in any situation; its value is immutable. A \emph{Revisable Belief}
+is instead taken as true \emph{for now}, but is explicitly open to retraction
+in light of new evidence. Following Hansson \cite{Hansson2020}, we represent this distinction in a hyperreal field $\Rstar$.
+We also slightly adjust the terminology: Hansson's ``full beliefs'' correspond, in our setting, to what we call \emph{Revisable Beliefs},
+since his contrast is between probabilistic degrees of belief and categorical acceptance, whereas we restrict attention here to non-probabilistic commitments.
+
+
+\subsection{Hyperreal Numbers: Definitions and Basic Properties}
+\label{subsec:hyperreal-defs}
+
+To track \emph{revisability} without changing the ordinary fractional value of a derivation, we enrich the real-valued bookkeeping with an \emph{infinitesimal residue}.  Concretely, we fix a hyperreal field $\Rstar$, i.e.\ a non-Archimedean elementary extension of $\R$ as in Nonstandard Analysis \cite{robinson1966,goldblatt1998}.  For definiteness, one may take an ultrapower $\R^\N/\mathcal{U}$ for a non-principal ultrafilter $\mathcal{U}$; the specific construction will not matter for our applications, because we only use the order, field operations, and the standard-part map on finite elements.
+
+\begin{definition}[Finite and infinitesimal hyperreals]\label{def:hyperreal-finite-inf}
+A hyperreal $x\in\Rstar$ is \emph{finite} if there exists $n\in\N$ such that $|x|<n$.
+A finite $x$ is \emph{infinitesimal} if for every $n\in\N$ we have $|x|<\tfrac{1}{n}$.
+We write $\Fin(\Rstar)$ for the set of finite hyperreals and $\Inf(\Rstar)$ for the set of infinitesimals.
+\end{definition}
+
+\begin{definition}[Standard part on finite hyperreals]\label{def:standard-part}
+For every $x\in\Fin(\Rstar)$ there exists a unique real number $r\in\R$ such that $x-r\in\Inf(\Rstar)$.
+We call $r$ the \emph{standard part} of $x$ and write $\st(x)=r$.
+\end{definition}
+
+\begin{definition}[Infinitesimal comparison]\label{def:hyperreal-notation}
+For $a,b\in\Fin(\Rstar)$ we write:
+\begin{align*}
+ a \approx b \ &\text{iff}\ \st(a)=\st(b),\\
+ a \not\approx b \ &\text{iff}\ \st(a)\neq \st(b),\\
+ a \prec b \ &\text{iff}\ a<b\ \text{and}\ a\approx b,\\
+ a \ll b \ &\text{iff}\ \st(a)<\st(b).
+\end{align*}
+\end{definition}
+
+\begin{proposition}[Arithmetic of standard parts]\label{prop:st-arithmetic}
+Let $s,t\in\Fin(\Rstar)$. Then
+\[
+\st(-s)=-\st(s),\qquad
+\st(s+t)=\st(s)+\st(t),\qquad
+\st(st)=\st(s)\st(t),
+\]
+and if $\st(t)\neq 0$, then $\st(s/t)=\st(s)/\st(t)$.
+Moreover, if $\varepsilon_1,\varepsilon_2\in\Inf(\Rstar)$ and $u\in\Fin(\Rstar)$ with $\st(u)\neq 0$, then
+$\varepsilon_1+\varepsilon_2$, $\varepsilon_1\varepsilon_2$, $u\varepsilon_1$, and $\varepsilon_1/u$ are infinitesimal.
+\end{proposition}
+
+\begin{remark}
+Proposition~\ref{prop:st-arithmetic} follows from the basic calculus of hyperreals and the standard-part map.
+In particular, all the algebraic manipulations we perform on weights are \emph{transfer-compatible}: any identity or inequality used at the real level continues to hold in $\Rstar$.
+We will not need more sophisticated machinery (e.g.\ saturation or Loeb measure) in this paper.
+\end{remark}
+
+\subsection{Why Hyperreals for Beliefs?}
+\label{subsec:why-hyperreals}
+
+Our proof-theoretic semantics associates to each derivation a pair $(n,w)$ where $n\in\N$ counts the leaves (top-sequents) and $w\in\Rstar$ is an accumulated weight.
+The standard fractional value is obtained by normalizing and taking the standard part, $\st(w/n)$.
+Hyperreals are technically well suited to this enrichment:
+
+\begin{itemize}
+ \item \textbf{Conservative enrichment.} If a revisable belief contributes $1-\varepsilon$ with $\varepsilon$ infinitesimal, then $\st(1-\varepsilon)=1$.
+ Hence the real-valued fractional semantics is unchanged, while the infinitesimal residue records dependence on defeasible premises.
+
+ \item \textbf{Transfer Principle.} Working in an elementary extension of $\R$ guarantees that the real-algebraic reasoning underlying normalization and comparison of values persists in $\Rstar$ without case-by-case re-proofs \cite{robinson1966,goldblatt1998}.
+
+ \item \textbf{Ultrapower interpretation.} Under the representation $\Rstar=\R^\N/\mathcal{U}$, an infinitesimal $\varepsilon$ can be seen as the class of a sequence $(\varepsilon_n)$ with $\varepsilon_n\to 0$.
+ Thus $1-\varepsilon$ formalizes ``arbitrarily close to~$1$'' as a genuine field element, rather than as a limit statement.
+
+ \item \textbf{Compatibility with probabilistic refinements.} Hyperreals are a standard tool in nonstandard probability (e.g.\ via Loeb measures), so the present bookkeeping integrates smoothly with possible future probabilistic or Bayesian extensions of graded belief.
+\end{itemize}
+
+
+\subsection{Sequent Decorations and Belief Axioms}
+\label{subsec:sequent-hyperreals}
+
+To internalize the distinction, we decorate the turnstile with a hyperreal
+value. We replace the belief axiom
+
+\begin{prooftree}
+ \AxiomC{ }
+ \RightLabel{\scriptsize$(b_j)$}
+ \UnaryInfC{$\sststile{\mathrm{1}}{1}_\B \Gamma, b_j$}
+\end{prooftree}
+
+with
+
+\begin{prooftree}
+ \AxiomC{ }
+ \RightLabel{\scriptsize$(b_j)$}
+ \UnaryInfC{$\sststile{\mathrm{1}}{1-\delta_{b_j}}_\B \Gamma, b_j$}
+\end{prooftree}
+
+where $\delta_{b_j}$ is either $0$ (if $b_j$ is a Full Belief) or an
+infinitesimal (if $b_j$ is Revisable). The $\delta$ thus functions as a
+trace of revisability along the proof.
+
+This notation does not affect admissibility results such as Cut and
+Weakening: since $\st(1-\delta)=1$, standard-part arguments go
+through as before \cite{Hansson2020}. What changes is the expressive
+power of Fractional Semantics: the infinitesimal residue records the extent to which a derivation depends on revisable premises.
+
+\begin{figure}[t]
+\begin{tcolorbox}[myfigurebox]
+ 
+\centering
+\textbf{Axioms:}\vspace{0.4cm}
+
+\begin{minipage}{0.28\textwidth}
+\begin{prooftree}
+ \AxiomC{ }
+ \RightLabel{\scriptsize($\overline{ax.}$)}
+ \UnaryInfC{$\sststile{1}{0}_\B\Gamma$}
+\end{prooftree}
+\end{minipage}
+\begin{minipage}{0.28\textwidth}
+\begin{prooftree}
+ \AxiomC{ }
+ \RightLabel{\scriptsize(ax.)}
+ \UnaryInfC{$\sststile{1}{1}_\B \Gamma, p, \neg p$}
+\end{prooftree}
+\end{minipage}
+
+\vspace{0.6cm}
+\textbf{Beliefs:}\vspace{0.3cm}
+
+\begin{minipage}{0.52\textwidth}
+\begin{prooftree}
+ \AxiomC{ }
+ \RightLabel{\scriptsize$(b_j)$}
+ \UnaryInfC{$\sststile{\mathrm{1}}{1-\delta_{\{p_1,\dots,p_n\}}}_\B \; p_1,\dots,p_n$}
+\end{prooftree}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+If $\{p_1,\dots,p_n\}\in \B$
+\end{minipage}
+
+\vspace{0.2cm}
+
+\begin{minipage}{0.52\textwidth}
+\begin{prooftree}
+ \AxiomC{ }
+ \RightLabel{\scriptsize$(b_j)$}
+ \UnaryInfC{$\sststile{\mathrm{1}}{\delta_{\{p_1,\dots,p_n\}}}_\B \; \neg(p_1,\dots,p_n)$}
+\end{prooftree}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+If $\{p_1,\dots,p_n\}\in \B$
+\end{minipage}
+
+\vspace{0.2cm}
+
+\begin{minipage}{0.52\textwidth}
+\begin{prooftree}
+ \AxiomC{ }
+ \RightLabel{\scriptsize$(b_j)$}
+ \UnaryInfC{$\sststile{\mathrm{1}}{0}_\B \; \neg(p_1,\dots,p_n)$}
+\end{prooftree}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+If $\{p_1,\dots,p_n\}\notin \B$ and $\{\neg(p_1,\dots,p_n)\}\notin \B$
+\end{minipage}
+
+\vspace{0.5cm}
+\textbf{Rules:}\vspace{0.3cm}
+
+\begin{minipage}{0.36\textwidth}
+\begin{prooftree}
+ \AxiomC{$\sststile{n}{m}_\B \Gamma, A, B$}
+ \RightLabel{\scriptsize$(R\vee)$}
+ \UnaryInfC{$\sststile{n}{m}_\B \Gamma, A\vee B$}
+\end{prooftree}
+
+\end{minipage}
+\begin{minipage}{0.48\textwidth}
+\begin{prooftree}
+ \AxiomC{$\sststile{n_1}{m_1}_\B \Gamma, A$}
+ \AxiomC{$\sststile{n_2}{m_2}_\B \Gamma, B$}
+ \RightLabel{\scriptsize$(R\wedge)$}
+ \BinaryInfC{$\sststile{n_1+n_2}{m_1+m_2}_\B \Gamma, A\wedge B$}
+\end{prooftree}
+\end{minipage}
+\end{tcolorbox}
+
+\caption{The $\overline{\overline{GS4}}_\B$ sequent calculus with hyperreal decorations.}
+\label{tab:gs4B}
+\end{figure}
+
+\begin{example}[Conjunction]
+ \begin{prooftree}
+ \AxiomC{$\sststile{\mathrm{1}}{1-\delta_p}_\B \; p$}
+ \AxiomC{$\sststile{\mathrm{1}}{1-\delta_q}_\B \; q$}
+ \RightLabel{\scriptsize$(\wedge)$}
+ \BinaryInfC{$\sststile{\mathrm{2}}{\,2-(\delta_p+\delta_q)\,}_\B \; p\wedge q$}
+\end{prooftree}
+\end{example}
+
+
+
+Here the standard value remains $2$ (so, under Fractional Semantics,
+the truth-value is $1$), while the infinitesimal residue
+$\delta_p+\delta_q$ records that both leaves rely on revisable beliefs.
+If later evidence forces revision, the fractional value may decrease
+accordingly. Intuitively, the cumulative $\delta$ measures the
+\emph{fragility} of the derivation.
+
+\medskip
+\noindent
+\textit{Remark.} Our use of infinitesimal decorations is conservative at the level of standard parts: replacing a weight $1$ by $1-\delta$ (or $0$ by $\delta$) does not change the associated real-valued fractional semantics, since $\st(1-\delta)=1$ and $\st(\delta)=0$ for infinitesimal $\delta$. For readers who prefer a Nonstandard Analysis presentation, the same bookkeeping can be carried out in a hyperreal extension ${}^*\R$; see \cite{dauben1995,Hansson2020}.
+
+
+
+\subsection{Decomposition of a Revisable Belief}
+
+To decompose a belief, the rules remain the same as before; we must decompose it and close under cut. Suppose we aim to incorporate the belief $\; \vdash q \wedge (r\vee \neg s)$ into the system, but it is not a full belief. To achieve this, we need to decompose it:
+
+\begin{prooftree}
+		
+ \AxiomC{$\vdash q$ }
+ \AxiomC{$\vdash r, \neg s$ }
+ \RightLabel{\scriptsize$(\vee)$}
+ \UnaryInfC{$\vdash r\vee \neg s$} 
+ \RightLabel{\scriptsize$(\wedge)$}
+\BinaryInfC{$\vdash q \wedge (r\vee \neg s)$}
+		
+\end{prooftree}
+
+Now, to indicate that the original belief $\vdash q \wedge (r\vee \neg s)$ was neither a Full Belief nor a Tautology, we adjust its value by adding the number $1-\delta$ instead of 1 to all the leaves. This adjustment accounts for the infinitesimal nature of $\delta$, and its division by 2 ensures the preservation of infinitesimal characteristics. 
+
+\begin{prooftree}
+		
+ \AxiomC{$\sststile{\mathrm{1}}{1-\delta_q}_\B q$ }
+ \AxiomC{$\sststile{\mathrm{1}}{1-\delta_{\{r, \neg s\}}}_\B r, \neg s$ }
+ \RightLabel{\scriptsize$(\vee)$}
+ \UnaryInfC{$\sststile{\mathrm{1}}{1-\delta_{\{r, \neg s\}}}_\B r\vee \neg s$} 
+ \RightLabel{\scriptsize$(\wedge)$}
+\BinaryInfC{$\sststile{\mathrm{2}}{2-(\delta_q+\delta_{\{r, \neg s\}})}_\B q \wedge (r\vee \neg s)$}
+		
+\end{prooftree}
+
+
+In the event that either $\vdash q$ or $\vdash r, \neg s$ is employed in a derivation, we explicitly denote this value in the sequent derivation. For instance:
+
+\begin{prooftree}
+\AxiomC{$\sststile{\mathrm{1}}{1}_\B p, \neg p$}
+ \RightLabel{\scriptsize$(\vee)$}
+ \UnaryInfC{$\sststile{\mathrm{1}}{1}_\B p \vee \neg p$}
+				
+\AxiomC{$\sststile{\mathrm{1}}{1-\delta_q}_\B q$}
+				
+ \RightLabel{\scriptsize$(\wedge)$}
+	
+ \BinaryInfC{$\sststile{\mathrm{2}}{2-\delta_q}_\B (p \vee \neg p) \wedge q$}
+				
+\AxiomC{$\sststile{\mathrm{1}}{0}_\B \neg p, q$}
+ \RightLabel{\scriptsize$(\vee)$}
+ \UnaryInfC{$\sststile{\mathrm{1}}{0}_\B \neg p \vee q$}	
+ 
+ \RightLabel{\scriptsize$(\wedge)$}		
+ \BinaryInfC{$\sststile{\mathrm{3}}{2-\delta_q}_\B (p \vee \neg p) \wedge q \wedge (\neg p \vee q)$}
+				
+			\end{prooftree}
+
+This implies that, even without knowing the initial values of the leaves, we can still make observations about the value $(2-\delta_q)/3$: the standard part of the derivation is the Fractional Semantics value in $GS4_\B$ is $2/3$ and we can observe that there is only one infinitesimal number, indicating that only one of the initial beliefs is a Revisable Belief, in particular the proposition $q$. The portion that is neither a Full Belief nor a Revisable Belief is then $1/3$, representing what remains between $2/3$ and $1$.
+
+\begin{example}
+Suppose an agent believes that their smartphone is either on the table or in the backpack. We formalize:
+\begin{prooftree}
+ \AxiomC{$\sststile{1}{1-\delta_{\{p,q\}}}_{\B}\, p, q$}
+ \RightLabel{\scriptsize$(\vee)$}
+ \UnaryInfC{$\sststile{1}{1-\delta_{\{p,q\}}}_{\B}\, p \vee q$}
+\end{prooftree}
+
+This means the agent believes (almost) that the phone is either on the table or in the backpack. If the agent conjoins a tautology, the fractional value increases, while the normalized truth component stays the same:
+\begin{prooftree}
+ \AxiomC{$\sststile{1}{1-\delta_{\{p,q\}}}_{\B}\, p, q$}
+ \UnaryInfC{$\sststile{1}{1-\delta_{\{p,q\}}}_{\B}\, p \vee q$}
+ \AxiomC{$\sststile{1}{1}_{\B}\, r, \neg r$}
+ \UnaryInfC{$\sststile{1}{1}_{\B}\, r \vee \neg r$}
+ \RightLabel{\scriptsize$(\wedge)$}
+ \BinaryInfC{$\sststile{2}{\,2-\delta_{\{p,q\}}\,}_{\B}\, (p \vee q)\wedge(r \vee \neg r)$}
+\end{prooftree}
+
+\noindent In particular,
+
+\[
+\frac{2-\delta_{\{p,q\}}}{2}
+= 1 - \frac{\delta_{\{p,q\}}}{2}
+\;>\;
+\frac{1-\delta_{\{p,q\}}}{1} = 1-\delta_{p,q}
+\quad\text{for }\delta_{\{p,q\}}>0.
+\]
+
+Thus, adding a tautology raises the value (the infinitesimal residue halves from $\delta_{\{p,q\}}$ to $\delta_{\{p,q\}}/2$), while the normalized truth component remains $1$.
+\end{example}
+
+
+
+
+\section{Belief Revision in Fractional Semantics}
+\label{sec:revision}
+
+Belief revision represents a crucial test case for any logic of credences. In classical AGM theory, the dynamics of beliefs are described by operations of contraction, expansion, and revision, but the revision process acts only on the content of the belief set. The logical status of a belief---whether it is categorical or defeasible---remains external to the formalism. 
+
+In the framework presented here, by contrast, belief change is internal to the semantics itself. Each belief carries a fractional decoration that makes explicit whether it is a Full Belief, a Revisable Belief, or a gradient
+commitment. Revision operations therefore do not simply update the set of sentences an agent accepts, but directly affect the fractional value of sequents. This way, the system provides a transparent account of which beliefs can be revised, which cannot, and how the revision reshapes the outcome of a derivation. 
+
+This feature marks an essential difference with respect to AGM: while AGM operates at the level of sets, our approach embeds revision into the semantics, so that the proof-theoretic value itself keeps track of epistemic dynamics. 
+
+To make this idea concrete, we refine the proof-theoretic bookkeeping with hyperreal weights.  Revisable beliefs are discounted by a positive infinitesimal, so that they behave like tautologies at the level of standard parts while still leaving a non-trivial residue that can be inspected after normalization.
+
+Hyperreals play two technical roles in this setting.  First, they provide genuine infinitesimals with a standard-part map, so that $\st(1-\delta)=1$ for every infinitesimal $\delta>0$.  Second, by Transfer, the elementary algebraic reasoning used to compare and normalize fractional values is preserved in $\Rstar$.
+
+In Figure~\ref{tab:gs4B} we adopt a compact presentation of the belief axioms; at the intended epistemic level, however, it is useful to distinguish:
+
+\begin{itemize}
+ \item Tautology: $\sststile{1}{1} p,\neg p$.
+ \item Belief in \textit{p}: $p\in \B$, $\sststile{1}{1-\delta_p}_\B p$ and $\; \sststile{1}{\delta_{p}}_\B \neg p $.
+ \item Disbelief in \textit{p}: $\neg p\in \B$, $\sststile{1}{1-\delta_{\neg p}}_\B \neg p$ and $\; \sststile{1}{\delta_{\neg p}}_\B p$.
+ \item Unsettledness about \textit{p} if $p\not\in \B$ and $\neg p\not \in \B$: $\sststile{1}{0}_\B p$.
+ %\item Unsettledness about \textit{p} if $p\not\in B$ and $\neg p\not \in B$, $\sststile{1}{\delta}_\B p$ and $\sststile{1}{\delta}_\B \neg p$
+\end{itemize}
+
+In the calculus of Figure~\ref{tab:gs4B}, unsettledness about $p$ corresponds to the complementary axiom $(\overline{ax.})$.  The polarity constraint is encoded by pairing the weights for $p$ and $\neg p$: if $p\in\B$ is accepted as revisable, then $p$ receives weight $1-\delta_p$ and $\neg p$ receives the infinitesimal counter-weight $\delta_p$, so that the two contributions sum to~$1$ while recording defeasibility.
+
+\subsection{Operations}
+\label{sec:operations}
+
+Because $GS4$ is one-sided, a sequent $\vdash \Delta$ with $\Delta=p_1,\dots,p_n$ represents the disjunction $p_1\vee\cdots\vee p_n$.  Accordingly, belief axioms are introduced only for \emph{clauses} (multisets of literals).  This has a direct impact on how we assign infinitesimal weights to \emph{negated} beliefs.
+
+\subsubsection*{Atomic polarity}
+
+For an atom $p$ we enforce the intended polarity between believing $p$ and rejecting $\neg p$ by pairing the weights as follows.
+
+\begin{itemize}
+  \item If $p$ is a \emph{Full Belief} (or a tautological leaf), then $p$ carries weight $1$ and $\neg p$ carries weight $0$.
+  \item If $p$ is a \emph{Revisable Belief}, then we assign
+  \[
+    \sststile{1}{1-\delta_p}_\B\, p
+    \qquad\text{and}\qquad
+    \sststile{1}{\delta_p}_\B\, \neg p,
+  \]
+  where $\delta_p$ is a positive infinitesimal.  Thus $p$ is ``almost true'' and $\neg p$ is ``almost false'', and their weights add up to $1$.
+\end{itemize}
+
+\subsubsection*{Negating a disjunctive belief}
+
+Suppose the agent accepts the clause $\Delta=p_1,\dots,p_n$ (i.e.\ $p_1\vee\cdots\vee p_n$) as a single revisable belief, represented by the axiom
+\[
+  \sststile{1}{1-\delta_\Delta}_\B\, \Delta .
+\]
+The negation of $\bigvee\Delta$ is the conjunction $\neg p_1\wedge\cdots\wedge \neg p_n$, which must be decomposed in the calculus.  We therefore assign \emph{separate} infinitesimals to the conjuncts and obtain:
+\[
+  \sststile{n}{\delta_{p_1}+\cdots+\delta_{p_n}}_\B\,
+  (\neg p_1\wedge\cdots\wedge \neg p_n),
+\]
+so that the normalized value is an infinitesimal:
+\[
+\frac{\delta_{p_1}+\cdots+\delta_{p_n}}{n}\ \approx\ 0.
+\]
+When we do not need the fine structure of the residue, it is convenient to treat $\delta_\Delta$ as an \emph{aggregate} infinitesimal capturing the overall revisability of the belief $\Delta$.  At the level of standard parts, this makes no difference because $\st(1-\delta_\Delta)=1$ and $\st\!\big((\delta_{p_1}+\cdots+\delta_{p_n})/n\big)=0$.
+
+\begin{example}
+An agent knows she passed an exam and that the passing condition was: answer correctly either question $1$ or question $2$.  Let $p_1$ (resp.\ $p_2$) mean ``question $1$ (resp.\ $2$) was answered correctly''.  The belief is encoded as $\sststile{1}{1-\delta_\Delta}_\B\, p_1,p_2$.  The agent is then committed to the falsity of $\neg p_1\wedge \neg p_2$, whose proof-theoretic weight is infinitesimal:
+\begin{prooftree}
+  \AxiomC{$\sststile{1}{\delta_{p_1}}_\B\, \neg p_1$}
+  \AxiomC{$\sststile{1}{\delta_{p_2}}_\B\, \neg p_2$}
+  \RightLabel{\scriptsize$(\wedge)$}
+  \BinaryInfC{$\sststile{2}{\delta_{p_1}+\delta_{p_2}}_\B\, \neg p_1\wedge \neg p_2$}
+\end{prooftree}
+\end{example}
+
+\subsection{Belief Change Operations}
+\label{sec:belief-change}
+
+We now define contraction, expansion, and revision directly at the level of belief axioms, and we record their effect on the hyperreal-decorated value of derivations.  The guiding idea is simple: belief change modifies \emph{which clauses are available as belief axioms} and, therefore, modifies the accumulated truth weight $w$ in Definition~\ref{def:hyperreal-normal-form}, while leaving the purely logical part of the calculus untouched.
+
+
+\begin{definition}[Normal form for hyperreal-decorated weights]\label{def:hyperreal-normal-form}
+Let $\pi$ be a decorated $\overline{\overline{GS4}}_\B$-derivation with end-sequent $\sststile{n}{w}_\B\, \Delta$, where $n\in\N$ counts the leaves of $\pi$ and $w\in\Rstar$ is the accumulated truth weight.  If among the $n$ leaves there are $k$ tautological or Full-Belief leaves, and $x$ Revisable-Belief leaves with weights $1-\delta_1,\dots,1-\delta_x$, then
+\[
+w \;=\; k+x - (\delta_1+\cdots+\delta_x),
+\qquad\text{so}\qquad
+\st\!\left(\frac{w}{n}\right)=\frac{k+x}{n}.
+\]
+\end{definition}
+
+\noindent
+When the fine structure of the residue is irrelevant, we sometimes write schematically $\sststile{n}{\,k+x-x\delta\,}_\B \Delta$ to indicate the presence of $x$ revisable leaves, without tracking each individual infinitesimal.
+
+
+\begin{definition}[Contraction]\label{def:contraction}
+Let $\B-p$ denote the contraction of $\B$ by $p$.  If $p$ was available as a revisable belief axiom in $\B$, i.e.\ $\sststile{1}{1-\delta_p}_\B\, p$, then in $\B-p$ we treat $p$ as \emph{unsettled}:
+\[
+\sststile{1}{0}_{\B-p}\, p
+\qquad\text{and}\qquad
+\sststile{1}{0}_{\B-p}\, \neg p.
+\]
+Accordingly, every occurrence of a leaf $p$ that previously contributed weight $(1-\delta_p)$ now contributes $0$.
+\end{definition}
+
+\begin{example}[Effect of contraction]
+Assume $\B=\{p,q\}$ with $p,q$ revisable.  Then
+\[
+\sststile{2}{2-(\delta_p+\delta_q)}_\B\, (p\wedge q).
+\]
+After contracting by $p$ we obtain
+\[
+\sststile{2}{1-\delta_q}_{\B-p}\, (p\wedge q),
+\]
+since the $p$-leaf no longer contributes $1-\delta_p$.
+\end{example}
+
+\begin{definition}[Expansion]\label{def:expansion}
+Let $\B+p$ denote the expansion of $\B$ by an unsettled atom $p$.  In $\B+p$ we add $p$ as a revisable belief axiom:
+\[
+\sststile{1}{1-\delta_p}_{\B+p}\, p
+\qquad\text{and}\qquad
+\sststile{1}{\delta_p}_{\B+p}\, \neg p.
+\]
+Thus, occurrences of a $p$-leaf that previously had weight $0$ may now contribute weight $1-\delta_p$.
+\end{definition}
+
+\begin{example}[Effect of expansion]
+Let $\B=\{q\}$ with $q$ revisable and $p$ unsettled.  Then
+\[
+\sststile{2}{1-\delta_q}_\B\, (p\wedge q).
+\]
+After expanding by $p$ we obtain
+\[
+\sststile{2}{2-(\delta_p+\delta_q)}_{\B+p}\, (p\wedge q).
+\]
+\end{example}
+
+\begin{definition}[Revision]\label{def:revision}
+Let $\B * p$ denote the revision of $\B$ by $p$, assuming $\neg p$ is (revisably) believed in $\B$ while $p$ is not.  Revision removes $\neg p$ from the belief base and adds $p$:
+\[
+\sststile{1}{0}_{\B*p}\, \neg p
+\qquad\text{and}\qquad
+\sststile{1}{1-\delta_p}_{\B*p}\, p.
+\]
+\end{definition}
+
+\begin{definition}[Levi identity]\label{def:levi}
+Revision is defined by the Levi identity:
+\[
+\B * p \;:=\; (\B-\neg p)+p .
+\]
+\end{definition}
+
+\begin{proposition}[Compatibility with Levi identity]\label{prop:levi-fs}
+Let $\pi$ be a derivation in the belief base $\B$ with end-sequent $\sststile{n}{w}_\B\, \Delta$.
+Assume that $\pi$ uses $\neg p$ as a revisable belief leaf exactly $r$ times and uses $p$ as an unsettled leaf exactly $s$ times.
+Then the corresponding derivation in the revised base $\B*p$ has weight
+\[
+w' \;=\; w - r(1-\delta_{\neg p}) + s(1-\delta_p),
+\]
+and therefore
+\[
+\st\!\left(\frac{w'}{n}\right)=\st\!\left(\frac{w}{n}\right) - \frac{r}{n} + \frac{s}{n}.
+\]
+In particular, the standard-part update agrees with performing first contraction by $\neg p$ and then expansion by $p$, as required by Definition~\ref{def:levi}.
+\end{proposition}
+
+\begin{remark}
+Proposition~\ref{prop:levi-fs} is stated at the level of leaf-counting because fractional semantics is, by design, sensitive to how many times an axiom is used in an analytic proof.  The infinitesimal residues refine this sensitivity by additionally recording \emph{which} of those uses depend on revisable assumptions.
+\end{remark}
+\section{Gradient Beliefs}
+\label{sec:gradient}
+
+Which are the limits of starting with assumptions that must be either true or false? Let's consider the following example:
+
+\begin{example}
+\label{ex:girl}
+ Suppose that my girlfriend believes that outside is raining because she is in her bedroom and she has a skylight, so that the sound of the rain is evident. She has to go to the grocery store and she starts to wonder where her umbrella is. She supposes that it is in the car, but she is not sure that the umbrella is in the car. In $GS4_\B$ we have to formalize such an assumption as follows: $\B = p$ where $p$ is ``outside is raining'', but we can't have $q$ in the set of beliefs, where $q$ is ``the umbrella is in the car'' because my girlfriend is not sure about it. This means that the tree will be as follows: 
+
+ \begin{prooftree}
+ \AxiomC{$\sststile{1}{1-\delta_p}p$}
+ \AxiomC{$\sststile{1}{0}q$}
+ \RightLabel{\scriptsize$(\wedge)$}
+ \BinaryInfC{$\sststile{2}{1-\delta_p}p\wedge q$}
+ \end{prooftree}
+\end{example}
+
+The result means that the conjunction ``outside is raining and the umbrella is in the car'' will be sure only $1-\delta_p/2$, even if my girlfriend had some clues about the umbrella being in the car. To face this problem we need to extend $GS4_{\B}$ to $GS4_{\B, \G}$.
+
+
+In extending $GS4_\B$ to better handle nuanced epistemic states, we now introduce the notion of \emph{gradient beliefs}. These allow an agent to commit to a proposition with a degree of confidence, rather than fully accepting or rejecting it. This provides a continuum between belief and disbelief, offering a richer framework for modeling uncertainty.
+
+\begin{definition}[Gradient beliefs]
+A \emph{gradient belief} is a doxastic commitment to a proposition $A$ with a degree of confidence in the closed interval $[0,1]$. This degree is interpreted as the agent's epistemic strength or confidence in the truth of $A$. Let $\G = \{g_1, g_2, \dots, g_n\}$ be the set of such gradient beliefs, where each $g_i$ is a formula paired with a real-valued degree $v^{g_i} \in [0,1]$ expressing the strength of belief in $g_i$.
+\end{definition}
+
+Gradient beliefs thus serve to generalize full beliefs ($v^{g_i} = 1$) and revisable beliefs (which we may now treat as those for which $v^{g_i} = 1 - \delta$ for infinitesimal $\delta$). This prepares the system to accommodate a more fine-grained spectrum of attitudes toward propositions.
+
+\begin{definition}[Gradient belief values $v^{g_i}$]
+Each gradient belief $g_i \in \G$ is associated with a rational value $v^{g_i} \in [0,1]$, representing its strength. This value may be interpreted semantically as the degree to which the agent accepts $g_i$ as true.
+\end{definition}
+
+
+
+The system we now define, $GS4_{\B,\G}$, extends the base system $GS4_\B$ by adding support for these gradient judgments.
+
+\begin{definition}[System $GS4_{\B,\G}$]
+The system $\mathbf{GS4_{\B,\G}}$ extends $GS4_\B$ by including gradient belief axioms $g_1, g_2, \dots, g_n \in G$, each associated with a strength value $v^{g_i}$. The logic thus has:
+\begin{itemize}
+ \item full and revisable beliefs (as in $GS4_\B$),
+ \item graded beliefs represented by rational values in $[0,1]$.
+\end{itemize}
+\end{definition}
+
+To account for the presence of gradient beliefs at the top of a proof, we extend the notion of top sequents.
+
+\begin{definition}[Top gradient sequents]
+Let $\#top^{\G}(\pi)$ denote the number of top-level sequents in a derivation $\pi$ that originate from gradient belief axioms, i.e., \textit{cardinalities}. These are added to the other categories of top sequents. The following is the complete list:
+\begin{itemize}
+ \item $\#top^\G(\pi)$: gradient beliefs;
+ \item $\#top^b(\pi)$: revisable beliefs;
+ \item $\#top^1(\pi)$: full beliefs;
+ \item $\#top^0(\pi)$: neutral or non-committed premises.
+\end{itemize}
+\end{definition}
+
+We now update the semantic value of a formula in this expanded context to reflect the contribution of gradient beliefs.
+
+\begin{definition}[Fractional semantics in $GS4_{\B,\G}$]
+\label{def:semantics}
+The semantic value of a formula $A$ under $GS4_{\B,\G}$ is given by:
+\[
+\llbracket A \rrbracket_{\B,\G} = \frac{v^{g_1}(\pi) + v^{g_2}(\pi) + \dots + v^{g_n}(\pi) + \#top^b(\pi) + \#top^1(\pi)}{\#top^{\G}(\pi) + \#top^b(\pi) + \#top^1(\pi) + \#top^0(\pi)}
+\]
+where:
+\begin{itemize}
+ \item $v^{g_i}(\pi)$ is the weight contributed by each gradient belief at the top level of $\pi$;
+ \item $\#top^b(\pi)$, $\#top^1(\pi)$, $\#top^0(\pi)$ are cardinalities of top-level sequents from revisable, full, and neutral beliefs respectively.
+\end{itemize}
+This value reflects the overall epistemic support for $A$ as derived from both graded and categorical beliefs.
+\end{definition}
+
+To incorporate gradient beliefs into proofs, we extend the axiom system with the following rule:
+
+\begin{definition}[Gradient belief axiom rule]
+Axioms for gradient beliefs are introduced in $GS4_{\B,\G}$ via:
+
+\begin{prooftree}
+ \AxiomC{ }
+ \RightLabel{\scriptsize$(g_i)$}
+ \UnaryInfC{$\sststile{1}{v^{g_i} - \gamma_{g_i}}_{\B,\G} g_i$}
+\end{prooftree}
+
+Here:
+\begin{itemize}
+ \item $\gamma_{g_i}\in\Inf(\Rstar)$ is an infinitesimal \emph{revisability residue} attached to $g_i$ (analogous to the $\delta$-residues used for categorical beliefs).  Taking $\gamma_{g_i}=0$ recovers the ``full'' (non-revisable) case; taking $\gamma_{g_i}>0$ marks $g_i$ as defeasible.
+ \item $v^{g_i}-\gamma_{g_i}\in\Rstar$ is the hyperreal weight contributed by $g_i$ at the top level of a derivation; its standard part is $\st(v^{g_i}-\gamma_{g_i})=v^{g_i}$.
+ \item The fractional semantics remains well defined, because infinitesimal residues do not change the standard fractions obtained after normalization.
+\end{itemize}
+\end{definition}
+
+\begin{remark}
+Definition~\ref{def:semantics} is stable under the hyperreal enrichment.  If $z\in\Q$ and $\gamma\in\Inf(\Rstar)$, then $z-\gamma\in\Fin(\Rstar)$ and
+\[
+\st(z-\gamma)=z.
+\]
+Hence all arguments that depend only on the real-valued semantics can be recovered by taking standard parts, while the infinitesimal residues provide additional information about defeasibility.
+\end{remark}
+
+\begin{example}
+ Let's consider an example: an agent believes that her belief $g_1$ has value $v^{g_1}=0.8$ and her belief $g_2$ has value $v^{g_2}=0.7$. 
+ If we consider the proposition $\vdash g_1\wedge g_2$ we obtain the following derivation:
+
+\begin{prooftree}
+ \AxiomC{$\sststile{1}{0.8-\gamma_{g_1}}_{\B,\G} g_1$}
+ \AxiomC{$\sststile{1}{0.7-\gamma_{g_2}}_{\B,\G} g_2$}
+ \RightLabel{$(\wedge_R)$}
+ \BinaryInfC{$\sststile{2}{0.8+0.7-(\gamma_{g_1}+\gamma_{g_2})}_{\B,\G} g_1\wedge g_2$}
+\end{prooftree}
+
+\noindent 
+According to the conjunction rule, the numerator is the sum of the values of the premises, while the denominator is the sum of the number of premises. Hence the final Fractional Value is
+
+\[
+\llbracket A\rrbracket_{\B,\G} = \frac{1.5-(\gamma_{g_1}+\gamma_{g_2})}{2}.
+\]
+
+If we ignore the infinitesimal parts $\gamma_{g_1},\gamma_{g_2}$, the real part is $\llbracket A\rrbracket_{\B,\G} = \frac{1.5}{2}$. This could be simplified arithmetically as $\frac{3/2}{2}=\frac{3}{4}$. 
+However, such a simplification would hide one of the main features of Fractional Semantics: the denominator explicitly keeps track of the number of propositions involved in the derivation. Thus, writing $\tfrac{1.5}{2}$ is more informative than $\tfrac{3}{4}$, since it preserves the structural information carried by the proof tree.
+\end{example}
+
+\begin{example}[Combination of Gradient Beliefs]
+ Let's consider again Example~\ref{ex:girl}. In $GS4_{\B,\G}$ we can formalize as follows: $\B = p$, where $p$ is ``outside is raining'', and the proposition ``the umbrella is in the car'' has a confidence value of $0.7$, i.e.\ $q = 0.7$. This yields the following derivation:
+ \begin{prooftree}
+ \AxiomC{$\sststile{1}{1-\delta_p}_{\B,\G}p$}
+ \AxiomC{$\sststile{1}{0.7-\gamma_q}_{\B,\G}q$}
+ \RightLabel{\scriptsize$(\wedge)$}
+ \BinaryInfC{$\sststile{2}{1.7-(\delta_p+\gamma_q)}_{\B,\G} p\wedge q$}
+ \end{prooftree}
+ The result indicates that the conjunction ``outside is raining and the umbrella is in the car'' has a total confidence of 
+ \[
+ \mathbb{st} \frac{1.7-(\delta_p+\gamma_q)}{2} \approx 0.85,
+ \]
+ a value higher than $0.5$ and closer to truth, thereby providing a more faithful approximation of the agent’s epistemic state.
+\end{example}
+
+
+
+\begin{figure}
+\begin{tcolorbox}[myfigurebox]
+ 
+\centering
+
+\textbf{Axioms:}
+\vspace{0.4cm}
+
+\begin{minipage}{0.25\textwidth}
+\begin{prooftree}
+ \AxiomC{ }
+ \RightLabel{\scriptsize($\overline{ax.}$)}
+ \UnaryInfC{$\sststile{1}{0}_{\B,\G} \Gamma$}
+\end{prooftree}
+\end{minipage}
+\begin{minipage}{0.25\textwidth}
+\begin{prooftree}
+ \AxiomC{ }
+ \RightLabel{\scriptsize(ax.)}
+ \UnaryInfC{$\sststile{1}{1}_{\B,\G} \Gamma, p, \neg p$}
+\end{prooftree}
+\end{minipage}
+\medskip
+
+\vspace{0.3cm}
+
+\textbf{Beliefs: }
+
+\vspace{0.4cm}
+
+\begin{minipage}{0.5\textwidth}
+\begin{prooftree}
+	\AxiomC{ }
+	\RightLabel{\scriptsize$(b_j)$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{1-\delta_{\{p_1,\dots,p_n\}}}_{\B,\G} p_1,\dots,p_n$}
+\end{prooftree}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+ $\{p_1,\dots,p_n\}\in B$
+\end{minipage}
+
+\vspace{0.3cm}
+
+\begin{minipage}{0.5\textwidth}
+\begin{prooftree}
+	\AxiomC{ }
+	\RightLabel{\scriptsize$(b_j)$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{\delta_{\{p_1,\dots,p_n\}}}_{\B,\G} \neg (p_1,\dots,p_n)$}
+\end{prooftree}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+ $\{ p_1,\dots,p_n \}\in B$
+\end{minipage}
+
+\vspace{0.4cm}
+
+\begin{minipage}{0.5\textwidth}
+\begin{prooftree}
+	\AxiomC{ }
+	\RightLabel{\scriptsize$(b_j)$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{0}_{\B,\G} \neg (p_1,\dots,p_n)$}
+\end{prooftree}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+\noindent
+ $\{ p_1,\dots,p_n \}\not \in B$
+
+\noindent
+and $\{\neg(p_1,\dots,p_n)\}\not \in B$
+\end{minipage}
+
+%Bisogna trovare un modo per rappresnetarle forse un po' meglio? 
+\vspace{0.4cm}
+
+\textbf{Gradient Beliefs:}
+
+\vspace{0.3cm}
+
+\begin{minipage}{0.5\textwidth}
+\begin{prooftree}
+	\AxiomC{ }
+	\RightLabel{\scriptsize$(g_j)$}
+	\UnaryInfC{$\sststile{\mathrm{1}}{v^{g_i}-\delta{g_i}}_{\B,\G} g_i$}
+\end{prooftree}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+\noindent
+ $g_i \in G$
+ \end{minipage}
+
+\vspace{0.3cm}
+
+\textbf{Rules:}
+\vspace{0.4cm}
+
+\begin{minipage}{0.36\textwidth}
+\begin{prooftree}
+ \AxiomC{$\sststile{n}{m} \Gamma, A, B$}
+ \RightLabel{\scriptsize$(R\vee)$}
+ \UnaryInfC{$\sststile{n}{m} \Gamma, A\vee B$}
+\end{prooftree}
+
+\end{minipage}
+\begin{minipage}{0.48\textwidth}
+\begin{prooftree}
+ \AxiomC{$\sststile{n_1}{m_1} \Gamma, A$}
+ \AxiomC{$\sststile{n_2}{m_2} \Gamma, B$}
+ \RightLabel{\scriptsize$(R\wedge)$}
+ \BinaryInfC{$\sststile{n_1+n_2}{m_1+m_2} \Gamma, A\wedge B$}
+\end{prooftree}
+\end{minipage}
+\end{tcolorbox}
+
+\label{tab:gs4BG}
+\caption{The $\overline{\overline{GS4}}_{\B,\G}$ sequent calculus}
+\end{figure}
+
+\section{Belief Change for Gradient Beliefs}
+
+The same Belief Change operations can be done in the new setting as follows: 
+
+\begin{definition}[Contraction]
+\label{def:contractionG}
+Let $G - p$ denote the \emph{contraction} of $G$ by $p$. If $p$ is a Gradient Belief, i.e., 
+\[
+\sststile{1}{v^{p} - \delta_p}_{G} p,
+\]
+then $p$ must become an unsettled belief:
+\[
+\sststile{1}{0}_{G - p} p.
+\]
+
+\noindent
+More generally, assume 
+\[
+\sststile{n+1}{v^{g_1}+\dots+v^{g_n}+v^{p} - (\delta_{g_1} + \dots + \delta_{g_n} + \delta_{p})}_G \Delta.
+\] 
+Then:
+\[
+\sststile{n+1}{v^{g_1}+\dots+v^{g_n} - (\delta_{g_1} + \dots + \delta_{g_n})}_{G - p} \Delta.
+\]
+\end{definition}
+
+
+\begin{definition}[Expansion]
+\label{def:expansionG}
+Let $\G + p$ denote the \emph{expansion} of $\G$ by $p$. 
+If $p$ is unsettled in $G$, i.e.,
+\[
+\sststile{1}{0}_{G} p,
+\]
+then $p$ must become a Gradient Belief:
+\[
+\sststile{1}{v^{p} - \delta_p}_{G + p} p.
+\]
+
+\noindent
+More generally, assume
+\[
+\sststile{n}{v^{g_1}+\dots+v^{g_n} - (\delta_{g_1} + \dots + \delta_{g_n})}_\G \Delta.
+\]
+Then:
+\[
+\sststile{n+1}{v^{g_1}+\dots+v^{g_n}+v^{p} - (\delta_{g_1} + \dots + \delta_{g_n} + \delta_{p})}_{\G + p} \Delta.
+\]
+\end{definition}
+
+
+\begin{definition}[Revision]
+\label{def:revisionG}
+Let $G \ast p$ denote the \emph{revision} of $\G$ by $p$, where $\neg p \in \G$ and $p \notin G$. 
+If $\neg p$ is a Gradient Belief, i.e.,
+\[
+\sststile{1}{v^{\neg p} - \delta_{\neg p}}_{G} \neg p,
+\]
+then the revision requires that:
+\[
+\sststile{1}{v^{p} - \delta_{p}}_{\G \ast p} p 
+\qquad \text{and} \qquad
+\sststile{1}{0}_{\G \ast p} \neg p.
+\]
+
+\noindent
+More generally, assume
+\[
+\sststile{n}{v^{g_1}+\dots+v^{g_n}+v^{\neg p} - (\delta_{g_1} + \dots + \delta_{g_n} + \delta_{\neg p})}_\G \Delta, \neg p.
+\]
+Then:
+\[
+\sststile{n}{v^{g_1}+\dots+v^{g_n}+v^{p} - (\delta_{g_1} + \dots + \delta_{g_n} + \delta_{p})}_{\G \ast p} \Delta, p.
+\]
+\end{definition}
+
+
+\begin{definition}[Change of value]
+\label{def:changeofvalue}
+Let us consider a Gradient Belief $p$ with value $v_1^p$ at time $t_1$:
+\[
+\sststile{1}{v_1^p - \delta_p} p.
+\]
+If, at a later time $t_2$, the agent acquires new information but still maintains $p$ as true with a different degree of confidence $v_2^p$, then the belief is updated as:
+\[
+\sststile{1}{v_2^p - \delta_p} p.
+\]
+
+\noindent
+More generally, a change of value corresponds to a transformation of the fractional semantics decoration of $p$ from $v_1^p$ to $v_2^p$, while preserving its status as a Gradient Belief.
+\end{definition}
+
+\begin{remark}
+The operation of \emph{Change of value} must be distinguished from the operation of \emph{Revision}. 
+In fact, while Revision replaces a belief $p$, Change of value preserves the same belief $p$, but updates the strength of commitment associated with it. 
+
+\noindent
+Formally, Revision transforms:
+\[
+\sststile{1}{v^{\neg p} - \delta_{\neg p}} \neg p
+\quad \text{into} \quad
+\sststile{1}{v^{p} - \delta_p} p,
+\]
+whereas Change of value transforms:
+\[
+\sststile{1}{v_1^p - \delta_p} p
+\quad \text{into} \quad
+\sststile{1}{v_2^p - \delta_p} p.
+\]
+
+\noindent
+Thus, Revision alters the \emph{content} of the belief set, while Change of value alters only the \emph{degree} with which a belief is held.
+\end{remark}
+
+\begin{example}
+Suppose that an agent holds the belief $p$ with value $v_1^p = 0.6$ at time $t_1$, i.e.,
+\[
+\sststile{1}{0.6 - \delta_p} p.
+\]
+At a later time $t_2$, she acquires new information that increases her confidence in $p$ to $v_2^p = 0.9$. 
+The updated belief is then:
+\[
+\sststile{1}{0.9 - \delta_p} p.
+\]
+This illustrates that the belief remains $p$, but its associated strength changes. 
+\end{example}
+
+
+
+\section{Conclusion and outlook}
+Fractional Semantics offers a disciplined way to enrich a classical consequence relation with quantitative
+decorations that encode not only what an agent accepts, but also how that acceptance is situated inside a
+doxastic state. Concretely, rather than treating endorsement as a binary predicate on \emph{beliefs}, the
+framework treats a doxastic state as a structured assignment of graded values to beliefs (or their
+contents), from which endorsement, rejection, and intermediate stances can be recovered by suitable
+thresholds or projections.
+
+\medskip
+\noindent
+Within this perspective, we argued that the hyperreal line ${}^{\ast}\mathbb{R}$ provides a technically
+natural scale once we want to separate two distinct aspects of doxastic commitment:
+(i) a \emph{standard} real-valued component capturing the agent's overt degree of endorsement, and
+(ii) an \emph{infinitesimal} component capturing a controlled margin of revisability.
+
+\medskip
+\noindent
+The use of hyperreals is therefore not merely cosmetic.
+Working in a nonstandard extension of the reals yields three pieces of structure that align with the
+intended epistemic reading of Gradient Beliefs:
+
+\begin{enumerate}
+  \item \textbf{Infinitesimal bookkeeping.}
+  By allowing values of the form $v-\delta$ with $\delta\in\Inf({}^{\ast}\mathbb{R})$,
+  we can represent ``nearly full'' acceptance (or rejection) while retaining a formally explicit
+  defeasibility parameter. This supports a clean semantics for Full vs.\ Revisable Beliefs and for the
+  update operations studied in the paper.
+  \item \textbf{Standard-part projection and conservative recovery.}
+  The map $\st:\Fin({}^{\ast}\mathbb{R})\to\mathbb{R}$ lets us recover an ordinary real-valued reading of
+  any finite hyperreal decoration. In this sense the enriched semantics is a conservative refinement:
+  the induced real-valued doxastic profile $\st\!\circ d$ captures the ``public'' component of the
+  state, while infinitesimals record ``latent'' revisability that disappears under $\st$.
+  \item \textbf{Transfer robustness.}
+  By the Transfer Principle, algebraic and order-theoretic facts true in $\mathbb{R}$ persist in
+  ${}^{\ast}\mathbb{R}$. This allows one to reuse classical inequalities and monotonicity arguments
+  inside the hyperreal setting without re-proving them, while the infinitesimal layer still carries
+  additional epistemic information.
+\end{enumerate}
+
+\medskip
+\noindent
+Conceptually, the hyperreal framework sharpens the distinction between \emph{content change} and
+\emph{strength change}. Revision alters the underlying doxastic state by replacing (or otherwise
+reconfiguring) the sentences that are treated as fully in force, whereas Change of value preserves the
+sentence and updates only its decoration within the state. Because the infinitesimal component is explicit,
+one can formulate fine-grained constraints on admissible dynamics---for example, requiring that certain
+sentences remain \emph{almost certain} (standard part fixed, infinitesimal slack bounded) throughout a
+learning process.
+
+\medskip
+\noindent
+Several directions suggest themselves for further work.
+First, hyperreals connect naturally to nonstandard probability via Loeb measures; this may allow an
+integration of Fractional Semantics with probabilistic belief dynamics while still keeping infinitesimal
+margins of revisability explicit.
+Second, one can investigate proof-theoretic counterparts of the proposed update operations (soundness,
+completeness, and normalization results for calculi that internalize revision and value change).
+Third, from a computational perspective it is worth studying finite approximations of hyperreal
+decorations (e.g.\ extremely small reals, interval/rational bounds, or two-tier representations
+$(v,\delta)$) and the stability of conclusions under approximation.
+
+\medskip
+\noindent
+Overall, replacing the surreal scale with ${}^{\ast}\mathbb{R}$ yields a conservative and technically robust
+foundation for Gradient Beliefs understood as states: the standard part anchors the semantics to ordinary
+real magnitudes, while infinitesimals provide a principled formal layer for defeasibility and controlled
+belief change within a doxastic state.
+
+
+
+
+
+
+
+\newpage
+\begin{thebibliography}{99}
+
+\bibitem{bizzarri_beliefs}
+Bizzarri, M. 2024. “Framing beliefs into fractional semantics for classical logic,” \textit{5th SILFS Postgraduate Conference Proceeding}.
+
+\bibitem{bizzarri_lottery}
+Bizzarri, M. 2023. “A solution to the Lottery Paradox through Fractional Semantics,” \textit{5th Pisa Colloquium}.
+
+\bibitem{dauben1995}
+Dauben, J.~W. 1995 \textit{Abraham Robinson. The Creation of Nonstandard Analysis, A Personal and Mathematical Odyssey}, Princeton Paperbacks, Princeton University Press, First edition.
+
+
+
+\bibitem{robinson1966}
+Robinson, A. 1966. \textit{Non-standard Analysis}. North-Holland.
+
+\bibitem{goldblatt1998}
+Goldblatt, R. 1998. \textit{Lectures on the Hyperreals: An Introduction to Nonstandard Analysis}. Springer (Graduate Texts in Mathematics 188).
+\bibitem{ferme:belief} Eduardo Ferm\'e, 2018, Sven Ove Hansson \textit{Belief Change: Introduction and Overview}
+
+\bibitem{hansson:knowledge} Hansson, S. 1996. Knowledge-level analysis of belief base operations. \textit{Artificial Intelligence} 82 (1-2):215-235.
+
+\bibitem{hansson_basis_2023} Hansson, S. A Basis for AGM Revision in Bayesian Probability Revision. {\em Journal Of Philosophical Logic}. \textbf{52}, 1535-1559 (2023,12)
+
+\bibitem{Hansson2020} Hansson, S. Revising Probabilities and Full Beliefs. {\em Journal Of Philosophical Logic}. \textbf{49}, 1005-1039 (2020,3)
+
+\bibitem{keisler1986}
+H.~J. Keisler, \textit{Elementary Calculus: An Infinitesimal Approach}, 2nd ed., Prindle, Weber \& Schmidt, Boston, 1986.
+
+\bibitem{kleene:mathematical}
+Kleene, S.C. 1967. \textit{Mathematical Logic}, New York: John Wiley \& Sons.
+
+
+\bibitem{mak:bridges}
+Makinson, D. 2005. \textit{Bridges from Classical to Nonmonotonic Logic}, Milton Keynes: Lightning Source.
+
+\bibitem{piazzapulcini_uniqueness}
+Piazza, M. and Pulcini, G. 2016. “Uniqueness of Axiomatic Extensions of Cut-Free Classical Propositional Logic,” \textit{Logic Journal of the IGPL}, \textbf{24(5)}: 708–718.
+
+\bibitem{piazza:abduction}
+Piazza, M., Pulcini, G., Sabatini A. 2024. “Abduction as Deductive Saturation: a Proof-Theoretic Inquiry” \textit{Logic Journal of the IGPL}, \textbf{24(5)}: 708–718.
+
+\bibitem{piazzapulcini:fractional}
+Piazza, M. and Pulcini, G. 2020. “Fractional Semantics for Classical Logic,” \textit{Review of Symbolic Logic}, \textbf{13(4)}: 810–828.
+
+\bibitem{piazzapulcini:modal}
+Piazza, M., Pulcini, G., and Tesi, M. 2021. “Fractional-valued modal logic,” \textit{The Review of Symbolic Logic}, 1–22.
+
+
+
+\bibitem{troelstra:basicproof}
+Troelstra, A.S. and Schwichtenberg, H. 2000. \textit{Basic Proof Theory}, 2nd ed., Cambridge: Cambridge University Press. (Cambridge Tracts in Theoretical Computer Science)
+
+\bibitem{avron:gentzen}
+Avron, A. 1993. ``Gentzen-type systems, resolution and tableaux.'' \textit{Journal of Automated Reasoning} 10: 265--281.
+
+\end{thebibliography}
+
+\end{document}

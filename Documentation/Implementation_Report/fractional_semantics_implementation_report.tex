@@ -1,0 +1,212 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{amsmath,amssymb}
+
+\title{Fractional Semantics Project\\Implementation Report}
+\author{Project Workspace: Fractional Semantics}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\bigskip
+
+\section{Goal}
+The project was developed to compute Fractional Semantics values from sequents, handle a belief set $B$, support belief revision workflows, and generate readable decomposition outputs in classic prooftree style (with Fractional decorations).
+
+The final system includes:
+\begin{itemize}[leftmargin=1.5em]
+  \item CLI workflows (analysis, revision, demos, certificates, comparison tools),
+  \item automatic \texttt{.tex}/\texttt{.pdf} output folders for each run,
+  \item a browser-based visual interface with decomposition view, PNG preview, history, and export.
+\end{itemize}
+
+\section{Core Architecture}
+The implementation is modular. Main components:
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.34\linewidth} >{\raggedright\arraybackslash}p{0.60\linewidth}}
+\textbf{Module} & \textbf{Responsibility} \\
+\hline
+\texttt{fs\_semantics/logic.py} & Formula AST, parser, one-sided/two-sided sequent parsing, rendering with precedence-aware parentheses. \\
+\texttt{fs\_semantics/calculus.py} & GS4-like decomposition and Fractional scoring on leaves. \\
+\texttt{fs\_semantics/beliefs.py} & Belief base parsing and cut-closure support. \\
+\texttt{fs\_semantics/latex.py} & Classic \texttt{bussproofs} decomposition rendering with \texttt{\textbackslash sststile\{\textbackslash mathrm\{n\}\}\{m\}}. \\
+\texttt{fs\_semantics/latex\_compile.py} & LaTeX to PDF/PNG compilation pipeline, landscape tree-only previews, cropping margins. \\
+\texttt{fs\_semantics/decomposition\_service.py} & Orchestrates parsing, decomposition, tree payload, validation, and output bundle. \\
+\texttt{fs\_semantics/visualization.py} & JSON payload for visual tree panel (rule labels, $N/M$, display sequent). \\
+\texttt{fs\_semantics/proof\_validation.py} & Structural validation of decomposition steps and root coherence. \\
+\texttt{fs\_semantics/propositional\_sc.py} & Pure propositional sequent-calculus reference engine for decomposition comparison. \\
+\texttt{fs\_semantics/afp\_certificate.py} & Isabelle/AFP-oriented certificate generation from produced proof trees. \\
+\texttt{fs\_semantics/web\_gui.py} & Browser UI (form, tree, decomposition, PNG preview, history, random sequent generation). \\
+\texttt{fs\_semantics/cli.py} & Command-line entrypoints and end-to-end workflows. \\
+\end{longtable}
+
+\section{Input Semantics and Normalization}
+\subsection{Supported Sequent Forms}
+Two forms are accepted:
+\begin{itemize}[leftmargin=1.5em]
+  \item One-sided: \texttt{A, B, C}
+  \item Two-sided: \(\Gamma \vdash \Delta\), \texttt{Gamma |- Delta}, or \texttt{Gamma \textbackslash vdash Delta}
+\end{itemize}
+
+\subsection{Comma Meaning}
+\begin{itemize}[leftmargin=1.5em]
+  \item Left side commas are conjunction.
+  \item Right side commas are disjunction.
+  \item Two-sided sequents are normalized to one-sided form:
+  \[
+    \Gamma \vdash \Delta \quad \mapsto \quad \vdash \neg\Gamma,\Delta
+  \]
+\end{itemize}
+
+\subsection{Parentheses Discipline}
+Rendering is precedence-aware and keeps only necessary parentheses. The system was refined to avoid redundant bracket pairs (for example avoiding artificial forms like double wrapping from rendering artifacts), while preserving logical correctness.
+
+\section{Fractional Decomposition and Belief Modes}
+\subsection{Classic Prooftree Output}
+The decomposition is generated in \texttt{bussproofs} style (not analytical textual decomposition), decorated with Fractional turnstiles:
+\[
+\texttt{\textbackslash sststile\{\textbackslash mathrm\{N\}\}\{M\}}
+\]
+with rule labels such as \texttt{($\vee$)}, \texttt{($\wedge$)}, \texttt{(ax.)}, \texttt{(b)}, \texttt{($\overline{\text{ax.}}$)}.
+
+\subsection{Belief Set Handling}
+Beliefs can be provided by repeated options or prompt-style text:
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{--belief "(p | q)" --belief "\textasciitilde u"}
+  \item \texttt{--belief-set "B=\{(p | q); \textasciitilde u\}"}
+\end{itemize}
+
+If $B$ is empty, the decomposition uses undecorated turnstiles (no $\,\_\{\mathbb{B}\}$ suffix). If $B$ is non-empty, belief-sensitive values are enabled.
+
+\subsection{Full Beliefs Mode}
+A dedicated full-beliefs mode was added to include explicit belief contributions:
+\[
+\delta_{\{\cdots\}}
+\]
+inside the $M$ component, so each belief contribution is visible in the decomposition.
+
+\section{Belief Revision Workflows}
+The CLI supports:
+\begin{itemize}[leftmargin=1.5em]
+  \item contraction,
+  \item expansion,
+  \item revision (Levi identity),
+  \item automatic revision demo generation.
+\end{itemize}
+
+Each run produces a new timestamped folder in \texttt{tex\_outputs/} and compiles generated LaTeX automatically.
+
+\section{Output Pipeline and LaTeX Compilation}
+\subsection{Run Isolation}
+Every new computation creates a dedicated subfolder under \texttt{tex\_outputs/} so files do not overwrite each other.
+
+\subsection{Preview Compilation}
+For GUI preview:
+\begin{itemize}[leftmargin=1.5em]
+  \item decomposition is compiled in a landscape-oriented LaTeX preview document,
+  \item tree-only PNG output is generated (PDF-to-PNG conversion toolchain),
+  \item DPI is configurable for high-resolution output,
+  \item border padding is applied to keep extreme formulas readable.
+\end{itemize}
+
+\subsection{Custom Scaled Prooftree Environment}
+The following environment is integrated in preview generation to control render scale:
+\begin{verbatim}
+\newenvironment{scprooftree}[1]%
+{\gdef\scalefactor{#1}\begin{center}\proofSkipAmount \leavevmode}%
+{\scalebox{\scalefactor}{\DisplayProof}\proofSkipAmount \end{center} }
+\end{verbatim}
+
+\section{Visual Interface (Web GUI)}
+\subsection{Why Web GUI}
+When \texttt{tkinter} is unavailable in the local Python build, the system uses a browser-based interface as fallback (and can also be launched directly).
+
+\subsection{Main Features Implemented}
+\begin{itemize}[leftmargin=1.5em]
+  \item Inputs: sequent, belief set, belief mode, DPI.
+  \item Outputs: decomposition-only LaTeX and interactive visual tree.
+  \item PNG preview area with scroll and zoom controls.
+  \item Loading indicator during decomposition and compilation.
+  \item Legend for OR/AND/negation accepted syntax.
+  \item History dropdown with restoration of previous runs.
+  \item PNG download button.
+  \item Random sequent button.
+\end{itemize}
+
+\subsection{Random Sequent Generation}
+A random AST-based formula generator was added so produced sequents are parser-safe and syntactically valid. Both one-sided and two-sided forms are generated.
+
+\subsection{Preview Usability Fixes}
+Several UI fixes were introduced:
+\begin{itemize}[leftmargin=1.5em]
+  \item preview recenters automatically when image loads,
+  \item default preview readability improved,
+  \item zoom strategy adjusted for large trees.
+\end{itemize}
+
+Final zoom logic is based on decomposition complexity by counting \texttt{\textbackslash BinaryInfC} occurrences, e.g.:
+\begin{itemize}[leftmargin=1.5em]
+  \item 0 binary rules $\rightarrow$ 120\%
+  \item 1 binary rule $\rightarrow$ 110\%
+  \item 3 binary rules $\rightarrow$ 55\%
+\end{itemize}
+with clamped behavior for larger trees.
+
+\section{Correctness Controls}
+\subsection{Structural Validation}
+Each generated proof tree is checked for:
+\begin{itemize}[leftmargin=1.5em]
+  \item correct parent/child rule behavior for $\vee$ and $\wedge$ nodes,
+  \item expected normalized root sequent,
+  \item coherent decomposition under formula permutations where appropriate.
+\end{itemize}
+
+\subsection{Parentheses-Aware Consistency}
+Validation and rendering were refined to keep output aligned with input grouping semantics, including correct handling of right-side comma as disjunction and left-side comma as conjunction.
+
+\section{Reference Comparison and AFP Alignment}
+\subsection{Pure Sequent-Calculus Comparator}
+A dedicated propositional sequent-calculus reference module was added to compare decomposition shapes against the Fractional implementation (while keeping Fractional decorations separate).
+
+\subsection{ATP/AFP Coherence}
+The project remains intentionally restricted to Fractional Semantics and its GS4-style fragment, but includes:
+\begin{itemize}[leftmargin=1.5em]
+  \item ATP-coherence checks in decomposition logic,
+  \item optional AFP/Isabelle certificate generation,
+  \item proof-shape checking against imported sequent-calculus infrastructure.
+\end{itemize}
+
+\section{Testing}
+Regression tests were expanded over time to cover:
+\begin{itemize}[leftmargin=1.5em]
+  \item parser semantics and comma interpretation,
+  \item decomposition root correctness,
+  \item LaTeX/PDF/PNG compilation constraints,
+  \item proof validation logic,
+  \item SC comparison behavior,
+  \item AFP certificate generation,
+  \item random sequent generation validity.
+\end{itemize}
+
+At report generation time, the test suite in this workspace runs successfully.
+
+\section{Result}
+The delivered system now provides:
+\begin{itemize}[leftmargin=1.5em]
+  \item Fractional Semantics computation from sequents,
+  \item belief-aware decomposition in classic prooftree format,
+  \item standard and full-beliefs modes (with $\delta$ decorations),
+  \item automatic run-folder generation and compilation,
+  \item an operational visual interface for decomposition exploration,
+  \item validation and comparison tooling to support proof reliability.
+\end{itemize}
+
+\end{document}

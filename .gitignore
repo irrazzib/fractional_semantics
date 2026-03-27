@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Generated outputs (LaTeX / PDF / PNG)
+tex_outputs/
+*.pdf
+*.png
+*.log
+*.aux
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Documentation build artefacts
+Documentation/*.pdf
+Documentation/*.aux
+Documentation/*.log
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Secrets / local config
+.env
+.env.local

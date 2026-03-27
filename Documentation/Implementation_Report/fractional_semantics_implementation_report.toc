@@ -1,0 +1,28 @@
+\contentsline {section}{\numberline {1}Goal}{2}{section.1}%
+\contentsline {section}{\numberline {2}Core Architecture}{2}{section.2}%
+\contentsline {section}{\numberline {3}Input Semantics and Normalization}{2}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Supported Sequent Forms}{2}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Comma Meaning}{2}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Parentheses Discipline}{3}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Fractional Decomposition and Belief Modes}{3}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Classic Prooftree Output}{3}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Belief Set Handling}{3}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Full Beliefs Mode}{3}{subsection.4.3}%
+\contentsline {section}{\numberline {5}Belief Revision Workflows}{3}{section.5}%
+\contentsline {section}{\numberline {6}Output Pipeline and LaTeX Compilation}{4}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Run Isolation}{4}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Preview Compilation}{4}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Custom Scaled Prooftree Environment}{4}{subsection.6.3}%
+\contentsline {section}{\numberline {7}Visual Interface (Web GUI)}{4}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Why Web GUI}{4}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Main Features Implemented}{4}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Random Sequent Generation}{4}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Preview Usability Fixes}{5}{subsection.7.4}%
+\contentsline {section}{\numberline {8}Correctness Controls}{5}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Structural Validation}{5}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Parentheses-Aware Consistency}{5}{subsection.8.2}%
+\contentsline {section}{\numberline {9}Reference Comparison and AFP Alignment}{5}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Pure Sequent-Calculus Comparator}{5}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}ATP/AFP Coherence}{5}{subsection.9.2}%
+\contentsline {section}{\numberline {10}Testing}{6}{section.10}%
+\contentsline {section}{\numberline {11}Result}{6}{section.11}%
