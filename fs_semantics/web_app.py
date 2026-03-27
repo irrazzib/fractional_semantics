@@ -39,10 +39,14 @@ _HTML = r"""<!doctype html>
         // we place \scriptstyle labels above/below \vdash with \overset /
         // \underset instead — the only difference from the LaTeX original is
         // the labels reference the full glyph height rather than just the bar.
+        // Argument order confirmed from turnstile.sty source:
+        //   raisedown (negative) → \first = #1 goes BELOW the bar
+        //   raiseup   (positive) → \second = #2 goes ABOVE the bar
+        // i.e. \sststile{n}{m}: n below, m above — opposite of intuition.
         sststile: [
           '\\mathrel{' +
-            '\\underset{\\scriptstyle #2}{' +
-              '\\overset{\\scriptstyle #1}{' +
+            '\\underset{\\scriptstyle #1}{' +
+              '\\overset{\\scriptstyle #2}{' +
                 '\\vdash' +
               '}' +
             '}' +
