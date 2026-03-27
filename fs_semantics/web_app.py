@@ -200,6 +200,17 @@ _HTML = r"""<!doctype html>
       font-family: "IBM Plex Mono", "Menlo", monospace;
     }
 
+    /* ── Proof step navigator ── */
+    .step-row {
+      display: flex; gap: 8px; align-items: center;
+      flex-wrap: wrap; margin-bottom: 8px;
+    }
+    .step-row input[type="range"] { flex: 1; max-width: 260px; padding: 0; }
+    .step-lbl {
+      min-width: 110px; font-size: 0.9rem; color: var(--muted);
+      font-family: "IBM Plex Mono", "Menlo", monospace;
+    }
+
     /* ── Values (MathJax) ── */
     #statsOutput {
       min-height: 2.5rem;
@@ -379,6 +390,13 @@ _HTML = r"""<!doctype html>
       <button class="ghost" id="zoomReset" type="button">Reset</button>
       <span id="zoomLbl" class="zoom-lbl">100%</span>
     </div>
+    <div id="stepRow" class="step-row" style="display:none;">
+      <span style="font-size:0.85rem;font-weight:700;color:var(--muted);">Step</span>
+      <button class="ghost" id="stepPrev" type="button" style="padding:6px 10px;">◀</button>
+      <input id="depthSlider" type="range" min="0" max="1" step="1" value="1" />
+      <button class="ghost" id="stepNext" type="button" style="padding:6px 10px;">▶</button>
+      <span id="depthLbl" class="step-lbl">Full tree</span>
+    </div>
     <div id="mathTreeOuter" class="math-tree-outer empty">
       <div id="mathTree"></div>
     </div>
@@ -453,6 +471,9 @@ const equivalence  = document.getElementById('equivalence');
 const randomMode   = document.getElementById('randomMode');
 const zoomInput    = document.getElementById('zoom');
 const zoomLbl      = document.getElementById('zoomLbl');
+const stepRow      = document.getElementById('stepRow');
+const depthSlider  = document.getElementById('depthSlider');
+const depthLbl     = document.getElementById('depthLbl');
 const loading      = document.getElementById('loading');
 const loadingText  = document.getElementById('loadingText');
 const goBtn        = document.getElementById('go');
@@ -465,9 +486,13 @@ const clearBtn     = document.getElementById('clear');
 
 // ── State ──
 const runHistory = [];
-let runCounter  = 0;
+let runCounter   = 0;
 let currentRunId = null;
-let treeScale   = 1.0;
+let treeScale    = 1.0;
+// Slider state
+let sliderTree      = null;   // current tree JSON from API
+let sliderMaxDepth  = 0;      // depth of full tree
+let sliderDepth     = 0;      // currently displayed depth
 const SCALE_STEP = 0.05;
 const SCALE_MIN  = 0.30;
 const SCALE_MAX  = 2.00;
@@ -511,6 +536,161 @@ document.getElementById('zoomOut').addEventListener('click', () => applyScale(tr
 document.getElementById('zoomIn').addEventListener('click',  () => applyScale(treeScale + SCALE_STEP));
 document.getElementById('zoomReset').addEventListener('click',() => applyScale(1.0));
 zoomInput.addEventListener('input', () => applyScale(Number(zoomInput.value) / 100));
+
+// ── Proof-step slider: rebuild bussproofs LaTeX from tree JSON at any depth ──
+
+/** Compute the maximum depth of a tree node. */
+function treeDepth(node) {
+  if (!node || !node.children || node.children.length === 0) return 0;
+  return 1 + Math.max(...node.children.map(treeDepth));
+}
+
+/**
+ * Convert ASCII sequent (uses ~, &, |) coming from sequent_to_ascii_grouped
+ * into LaTeX (uses \neg, \wedge, \vee).
+ */
+function asciiToLatex(str) {
+  return str
+    .replace(/~/g,          '\\neg ')
+    .replace(/\s*&\s*/g,    ' \\wedge ')
+    .replace(/\s*\|\s*/g,   ' \\vee ');
+}
+
+/**
+ * Parse a display string of the form
+ *   "sststile{n}{m}[_B] |- sequent"
+ * into its components.  Uses brace-counting so nested braces in m
+ * (e.g. delta symbols) are handled correctly.
+ */
+function parseSststileDisplay(display) {
+  if (!display || !display.startsWith('sststile')) return null;
+
+  function extractBraced(pos) {
+    let depth = 0, start = pos + 1, end = -1;
+    for (let j = pos; j < display.length; j++) {
+      if (display[j] === '{') depth++;
+      else if (display[j] === '}') { depth--; if (!depth) { end = j; break; } }
+    }
+    return end >= 0 ? { content: display.slice(start, end), next: end + 1 } : null;
+  }
+
+  const i1 = display.indexOf('{');
+  if (i1 < 0) return null;
+  const r1 = extractBraced(i1);
+  if (!r1) return null;
+
+  const i2 = display.indexOf('{', r1.next);
+  if (i2 < 0) return null;
+  const r2 = extractBraced(i2);
+  if (!r2) return null;
+
+  const rest  = display.slice(r2.next);
+  const bm    = rest.match(/^(_B)?\s*\|-\s*([\s\S]*)$/);
+  if (!bm) return null;
+  return { n: r1.content, m: r2.content, withB: !!bm[1], seq: bm[2].trim() };
+}
+
+/** Convert a tree-node display string into a LaTeX sequent for \UnaryInfC / \BinaryInfC. */
+function displayToLatex(display) {
+  const p = parseSststileDisplay(display);
+  if (!p) return display;
+  const suffix = p.withB ? '_{\\mathbb{B}}' : '';
+  return `\\sststile{\\mathrm{${p.n}}}{${p.m}}${suffix}\\; ${asciiToLatex(p.seq)}`;
+}
+
+/** Map a tree-node rule label to the LaTeX \RightLabel content. */
+function ruleToRightLabel(rule) {
+  const map = {
+    '(∨)':              '(\\vee)',
+    '(∧)':              '(\\wedge)',
+    '(ax.)':            '(ax.)',
+    '(b)':              '(b)',
+    '(overline{ax.})':  '(\\overline{ax.})',
+  };
+  return `\\RightLabel{$\\scriptstyle ${map[rule] || rule}$}`;
+}
+
+/**
+ * Recursively build bussproofs LaTeX for `node` up to `maxDepth`.
+ * Nodes at the frontier (not yet expanded) are shown as  AxiomC{$\cdots$}.
+ */
+function nodeToLatex(node, depth, maxDepth) {
+  const display  = displayToLatex(node.display);
+  const isLeaf   = !node.children || node.children.length === 0;
+  const isFrontier = !isLeaf && depth >= maxDepth;
+
+  if (isLeaf) {
+    return [
+      '\\AxiomC{}',
+      ruleToRightLabel(node.rule),
+      `\\UnaryInfC{$${display}$}`,
+    ].join('\n');
+  }
+
+  if (isFrontier) {
+    return [
+      '\\AxiomC{$\\cdots$}',
+      `\\UnaryInfC{$${display}$}`,
+    ].join('\n');
+  }
+
+  const label = ruleToRightLabel(node.rule);
+
+  if (node.children.length === 1) {
+    return [
+      nodeToLatex(node.children[0], depth + 1, maxDepth),
+      label,
+      `\\UnaryInfC{$${display}$}`,
+    ].join('\n');
+  }
+
+  // 2 children (wedge / binary rule)
+  return [
+    nodeToLatex(node.children[0], depth + 1, maxDepth),
+    nodeToLatex(node.children[1], depth + 1, maxDepth),
+    label,
+    `\\BinaryInfC{$${display}$}`,
+  ].join('\n');
+}
+
+/** Wrap a node's LaTeX in a prooftree environment. */
+function treeToLatex(tree, maxDepth) {
+  return '\\begin{prooftree}\n' + nodeToLatex(tree, 0, maxDepth) + '\n\\end{prooftree}';
+}
+
+/** Human-readable depth label. */
+function depthLabel(depth, max) {
+  if (depth >= max) return 'Full tree';
+  if (depth === 0)  return 'Root only';
+  return `Depth ${depth} / ${max}`;
+}
+
+/** Render the proof tree at the given depth and update UI controls. */
+async function applySliderDepth(depth) {
+  if (!sliderTree) return;
+  sliderDepth = Math.max(0, Math.min(sliderMaxDepth, depth));
+  depthSlider.value   = String(sliderDepth);
+  depthLbl.textContent = depthLabel(sliderDepth, sliderMaxDepth);
+  await renderProofTree(treeToLatex(sliderTree, sliderDepth));
+}
+
+/** Initialise the slider for a newly arrived tree. */
+function setSliderTree(tree) {
+  sliderTree     = tree;
+  sliderMaxDepth = tree ? treeDepth(tree) : 0;
+  sliderDepth    = sliderMaxDepth;
+  depthSlider.max   = String(sliderMaxDepth);
+  depthSlider.value = String(sliderMaxDepth);
+  depthLbl.textContent = depthLabel(sliderMaxDepth, sliderMaxDepth);
+  // Only show the slider when the tree has more than one level
+  stepRow.style.display = sliderMaxDepth > 0 ? '' : 'none';
+}
+
+depthSlider.addEventListener('input', () => applySliderDepth(Number(depthSlider.value)));
+document.getElementById('stepPrev').addEventListener('click',
+  () => applySliderDepth(sliderDepth - 1));
+document.getElementById('stepNext').addEventListener('click',
+  () => applySliderDepth(sliderDepth + 1));
 
 // ── MathJax helpers ──
 
@@ -713,6 +893,7 @@ goBtn.addEventListener('click', async () => {
 
     out.textContent = data.decomposition;
     renderVisualTree(data.tree);
+    setSliderTree(data.tree || null);
     setValidationInfo(data.validation || null);
     setEquivalenceInfo(data.equivalence || null);
 
@@ -870,6 +1051,7 @@ clearBtn.addEventListener('click', () => {
   statsOutput.innerHTML = ''; leavesInfo.textContent = '';
   error.textContent = ''; status.textContent = '';
   setValidationInfo(null); setEquivalenceInfo(null);
+  setSliderTree(null);
   updateGradientState();
   applyScale(1.0);
 });
